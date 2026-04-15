@@ -3,67 +3,108 @@
 #include <algorithm> 
 #include <cmath>
 #include <ctime>
-#include <sstream> // Required to parse math expressions automatically
+#include <sstream> 
 
 using namespace std;
 
-int main() {
+int main() 
+{
     string input;
     double num1, num2;
     char op;
 
-    cout << "--- System Online (V4.0 - Auto Sense) ---" << endl;
-    cout << "(Commands: hi, date, owner, exit or just type math like '5 + 2')" << endl;
+    cout << "--- System Online (V4.1 - Auto Sense) ---" << endl;
+    cout << "(Commands: hi, date, owner, battery, exit)" << endl;
 
-    while (true) {
+    while (true)
+    {
         cout << "\nYou: ";
         getline(cin, input);
 
         if (input.empty()) continue;
 
         // --- 1. Automatic Math Detection ---
-        // If the first character is a digit, treat it as a calculation
-        if (isdigit(input[0])) {
+        // If the first character is a number, try to solve it as a math problem
+        if (isdigit(input[0])) 
+        {
             stringstream ss(input);
-            if (ss >> num1 >> op >> num2) {
+            if (ss >> num1 >> op >> num2) 
+            {
                 cout << "Assistant (Math): ";
-                switch(op) {
-                    case '+': cout << num1+num2 << " ✅"; break;
-                    case '-': cout << num1-num2 << " ✅"; break;
-                    case '*': cout << num1*num2 << " ✅"; break;
+                switch(op) 
+                {
+                    case '+': cout << num1 + num2 << " ✅"; break;
+                    case '-': cout << num1 - num2 << " ✅"; break;
+                    case '*': cout << num1 * num2 << " ✅"; break;
                     case '/': 
-                        if(num2 != 0) cout << num1/num2 << " ✅";
+                        if(num2 != 0) cout << num1 / num2 << " ✅";
                         else cout << "Error: Cannot divide by zero! ❌";
                         break;
                     case '^': cout << pow(num1, num2) << " 🔥"; break;
                     default: cout << "Unknown operator! 😅";
                 }
                 cout << endl;
-                continue; // Skip the chat logic and wait for next input
+                continue; // Skip the chat logic and restart the loop
             }
         }
 
-        // --- 2. Chat Mode Logic ---
-        // Convert input to lowercase for command processing
+        // --- 2. Chat & System Logic ---
+        // Convert the input string to lowercase for easier matching
         transform(input.begin(), input.end(), input.begin(), [](unsigned char c){ return tolower(c); });
 
-        if (input == "exit" || input == "quit") {
+        // Exit Command
+        if (input == "exit" || input == "quit") 
+        {
             cout << "Assistant: Goodbye! Have a wonderful day. 🫂" << endl;
             break;
         }
-        else if (input == "who is your owner" || input == "owner") {
+        // Identity / Ownership
+        else if (input == "who is your owner" || input == "owner" || input == "creator") 
+        {
             cout << "Assistant: I was developed and built by Karthikeyan. He is my creator! 🛠️" << endl;
         }
-        else if (input == "date" || input == "time" || input == "today") {
+        // Date and Time
+        else if (input == "date" || input == "time" || input == "today") 
+        {
             time_t now = time(0);
             char* dt = ctime(&now);
             cout << "Assistant: The current date and time is: " << dt;
         }
-        else if (input == "hi" || input == "hello" || input == "hey") {
+        // Greetings
+        else if (input == "hi" || input == "hello" || input == "hey") 
+        {
             cout << "Assistant: Hello! I am your virtual assistant. How can I help you today?" << endl;
         }
-        else {
-            cout << "Assistant: I didn't quite get that. Try 'hi', 'date', or a math problem like '10 * 5'!" << endl;
+        
+        // --- 3. Tesla Battery Logic ---
+        else if (input == "battery" || input == "range" || input == "tesla") 
+        {
+            double battery_percent;
+            cout << "Assistant: What is your current battery percentage (0-100)? ";
+            cin >> battery_percent;
+            cin.ignore(1000, '\n'); // Clears the input buffer to prevent loop skipping
+
+            if (battery_percent >= 0 && battery_percent <= 100) 
+            {
+                // Assuming 1% charge = 5 KM of range
+                double range = battery_percent * 5;
+                cout << "Assistant: With your current charge, the estimated range is approximately " << range << " KM! 🚗🔋" << endl;
+
+                if (battery_percent < 20) {
+                    cout << "Assistant: Warning! Battery is low. Please find a charging station soon! ⚠️" << endl;
+                }
+                else if (battery_percent == 100) {
+                    cout << "Assistant: Battery fully charged. You are ready for a long trip! 🛣️" << endl;
+                }
+            } 
+            else {
+                cout << "Assistant: Please enter a valid percentage between 0 and 100. ❌" << endl;
+            }
+        }
+        // Default Response
+        else 
+        {
+            cout << "Assistant: I didn't quite catch that. Try 'hi', 'date', 'battery', or a math problem like '10 + 5'!" << endl;
         }
     }
 
