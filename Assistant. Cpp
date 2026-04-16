@@ -13,8 +13,8 @@ int main()
     double num1, num2;
     char op;
 
-    cout << "--- System Online (V4.1 - Auto Sense) ---" << endl;
-    cout << "(Commands: hi, date, owner, battery, exit)" << endl;
+    cout << "--- System Online (V4.2 - Integrated) ---" << endl;
+    cout << "(Commands: hi, date, battery, remind me at HH:MM, exit)" << endl;
 
     while (true)
     {
@@ -24,7 +24,6 @@ int main()
         if (input.empty()) continue;
 
         // --- 1. Automatic Math Detection ---
-        // If the first character is a number, try to solve it as a math problem
         if (isdigit(input[0])) 
         {
             stringstream ss(input);
@@ -44,67 +43,78 @@ int main()
                     default: cout << "Unknown operator! 😅";
                 }
                 cout << endl;
-                continue; // Skip the chat logic and restart the loop
+                continue; 
             }
         }
 
-        // --- 2. Chat & System Logic ---
-        // Convert the input string to lowercase for easier matching
-        transform(input.begin(), input.end(), input.begin(), [](unsigned char c){ return tolower(c); });
+        // Convert input to lowercase for chat commands
+        string lowerInput = input;
+        transform(lowerInput.begin(), lowerInput.end(), lowerInput.begin(), [](unsigned char c){ return tolower(c); });
 
-        // Exit Command
-        if (input == "exit" || input == "quit") 
+        // --- 2. Chat & System Logic ---
+        if (lowerInput == "exit" || lowerInput == "quit") 
         {
             cout << "Assistant: Goodbye! Have a wonderful day. 🫂" << endl;
             break;
         }
-        // Identity / Ownership
-        else if (input == "who is your owner" || input == "owner" || input == "creator") 
+        else if (lowerInput == "who is your owner" || lowerInput == "owner") 
         {
-            cout << "Assistant: I was developed and built by Karthikeyan. He is my creator! 🛠️" << endl;
+            cout << "Assistant: I was developed and built by Karthikeyan. 🛠️" << endl;
         }
-        // Date and Time
-        else if (input == "date" || input == "time" || input == "today") 
+        else if (lowerInput == "date" || lowerInput == "time" || lowerInput == "today") 
         {
             time_t now = time(0);
             char* dt = ctime(&now);
             cout << "Assistant: The current date and time is: " << dt;
         }
-        // Greetings
-        else if (input == "hi" || input == "hello" || input == "hey") 
+        else if (lowerInput == "hi" || lowerInput == "hello") 
         {
-            cout << "Assistant: Hello! I am your virtual assistant. How can I help you today?" << endl;
+            cout << "Assistant: Hello! How can I help you today?" << endl;
         }
         
         // --- 3. Tesla Battery Logic ---
-        else if (input == "battery" || input == "range" || input == "tesla") 
+        else if (lowerInput == "battery" || lowerInput == "range") 
         {
             double battery_percent;
             cout << "Assistant: What is your current battery percentage (0-100)? ";
             cin >> battery_percent;
-            cin.ignore(1000, '\n'); // Clears the input buffer to prevent loop skipping
+            cin.ignore(1000, '\n'); 
 
             if (battery_percent >= 0 && battery_percent <= 100) 
             {
-                // Assuming 1% charge = 5 KM of range
                 double range = battery_percent * 5;
-                cout << "Assistant: With your current charge, the estimated range is approximately " << range << " KM! 🚗🔋" << endl;
-
-                if (battery_percent < 20) {
-                    cout << "Assistant: Warning! Battery is low. Please find a charging station soon! ⚠️" << endl;
-                }
-                else if (battery_percent == 100) {
-                    cout << "Assistant: Battery fully charged. You are ready for a long trip! 🛣️" << endl;
-                }
+                cout << "Assistant: Estimated range is approximately " << range << " KM! 🚗🔋" << endl;
             } 
             else {
-                cout << "Assistant: Please enter a valid percentage between 0 and 100. ❌" << endl;
+                cout << "Assistant: Please enter a valid percentage. ❌" << endl;
             }
         }
-        // Default Response
+
+        // --- 4. Reminder Logic (Moved inside the loop) ---
+        else if (lowerInput.find("remind me at") != string::npos)
+        {
+            string alarmTime = lowerInput.substr(13); // Takes the time part
+            cout << "Assistant: Sure Karthikeyan, I will remind you at " << alarmTime << "! ⏰" << endl;
+            cout << "(System is waiting...)" << endl;
+            
+            bool reminded = false;
+            while (!reminded) {
+                time_t now = time(0);
+                tm *ltm = localtime(&now);
+                char currentTime[6];
+                strftime(currentTime, sizeof(currentTime), "%H:%M", ltm);
+                
+                if (string(currentTime) == alarmTime)
+                {
+                    cout << "\n[REMINDER] 🔔 Karthikeyan, it is " << alarmTime << "! Time to start your work!" << endl;
+                    reminded = true;
+                }
+            }
+        }
+        // --- 5. Default Response ---
         else 
         {
-            cout << "Assistant: I didn't quite catch that. Try 'hi', 'date', 'battery', or a math problem like '10 + 5'!" << endl;
+            cout << "Assistant: I didn't quite catch that. Try 'hi', 'battery', or 'remind me at 18:30'." << endl;
         }
     }
 
