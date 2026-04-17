@@ -4,6 +4,7 @@
 #include <cmath>
 #include <ctime>
 #include <sstream> 
+#include <unistd.h> // Required for sleep()
 
 using namespace std;
 
@@ -13,8 +14,12 @@ int main()
     double num1, num2;
     char op;
 
-    cout << "--- System Online (V4.2 - Integrated) ---" << endl;
-    cout << "(Commands: hi, date, battery, remind me at HH:MM, exit)" << endl;
+    // Task List Storage
+    static string tasks[5]; 
+    static int taskCount = 0;
+
+    cout << "--- System Online (V4.5) ---" << endl;
+    cout << "(Commands: hi, date, battery, add task, list, remind me at HH:MM, exit)" << endl;
 
     while (true)
     {
@@ -47,33 +52,35 @@ int main()
             }
         }
 
-        // Convert input to lowercase for chat commands
+        // --- 2. Lowercase conversion for chat logic ---
         string lowerInput = input;
         transform(lowerInput.begin(), lowerInput.end(), lowerInput.begin(), [](unsigned char c){ return tolower(c); });
 
-        // --- 2. Chat & System Logic ---
+        // Exit Command
         if (lowerInput == "exit" || lowerInput == "quit") 
         {
             cout << "Assistant: Goodbye! Have a wonderful day. 🫂" << endl;
             break;
         }
-        else if (lowerInput == "who is your owner" || lowerInput == "owner") 
+        // Identity
+        else if (lowerInput == "who is your owner" || lowerInput == "owner" || lowerInput == "creator") 
         {
-            cout << "Assistant: I was developed and built by Karthikeyan. 🛠️" << endl;
+            cout << "Assistant: I was developed and built by Karthikeyan. He is my creator! 🛠️" << endl;
         }
+        // Date and Time
         else if (lowerInput == "date" || lowerInput == "time" || lowerInput == "today") 
         {
             time_t now = time(0);
             char* dt = ctime(&now);
             cout << "Assistant: The current date and time is: " << dt;
         }
+        // Greetings
         else if (lowerInput == "hi" || lowerInput == "hello") 
         {
-            cout << "Assistant: Hello! How can I help you today?" << endl;
+            cout << "Assistant: Hello! I am your virtual assistant. How can I help you today?" << endl;
         }
-        
         // --- 3. Tesla Battery Logic ---
-        else if (lowerInput == "battery" || lowerInput == "range") 
+        else if (lowerInput == "battery" || lowerInput == "range" || lowerInput == "tesla") 
         {
             double battery_percent;
             cout << "Assistant: What is your current battery percentage (0-100)? ";
@@ -84,18 +91,15 @@ int main()
             {
                 double range = battery_percent * 5;
                 cout << "Assistant: Estimated range is approximately " << range << " KM! 🚗🔋" << endl;
+                if (battery_percent < 20) cout << "Assistant: Warning! Battery is low! ⚠️" << endl;
             } 
-            else {
-                cout << "Assistant: Please enter a valid percentage. ❌" << endl;
-            }
+            else cout << "Assistant: Please enter a valid percentage. ❌" << endl;
         }
-
-        // --- 4. Reminder Logic (Moved inside the loop) ---
+        // --- 4. Reminder Logic ---
         else if (lowerInput.find("remind me at") != string::npos)
         {
-            string alarmTime = lowerInput.substr(13); // Takes the time part
+            string alarmTime = lowerInput.substr(13); 
             cout << "Assistant: Sure Karthikeyan, I will remind you at " << alarmTime << "! ⏰" << endl;
-            cout << "(System is waiting...)" << endl;
             
             bool reminded = false;
             while (!reminded) {
@@ -109,12 +113,35 @@ int main()
                     cout << "\n[REMINDER] 🔔 Karthikeyan, it is " << alarmTime << "! Time to start your work!" << endl;
                     reminded = true;
                 }
+                sleep(2); // Save battery
             }
         }
-        // --- 5. Default Response ---
+        // --- 5. Success Task List ---
+        else if (lowerInput == "add task") {
+            if (taskCount < 5) {
+                cout << "Assistant: What task would you like to add, my friend?: ";
+                string newTask;
+                getline(cin, newTask);
+                tasks[taskCount] = newTask;
+                taskCount++;
+                cout << "Assistant: Great! Task added. ✅" << endl;
+            } else cout << "Assistant: List is full! ❌" << endl;
+        }
+        else if (lowerInput == "show task" || lowerInput == "list" || lowerInput == "tasks") {
+            cout << "\n--- Your Success Task List ---" << endl;
+            if (taskCount == 0) cout << "No tasks for now. Enjoy your free time! ✨" << endl;
+            else {
+                for (int i = 0; i < taskCount; i++) cout << i + 1 << ". " << tasks[i] << endl;
+            }
+        }
+        else if (lowerInput == "clear list" || lowerInput == "reset list") {
+            taskCount = 0;
+            cout << "Assistant: The list is now empty!" << endl;
+        }
+        // Default Response
         else 
         {
-            cout << "Assistant: I didn't quite catch that. Try 'hi', 'battery', or 'remind me at 18:30'." << endl;
+            cout << "Assistant: I didn't quite catch that. Try 'hi', 'date', or 'battery'!" << endl;
         }
     }
 
