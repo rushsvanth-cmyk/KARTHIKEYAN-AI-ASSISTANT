@@ -18,8 +18,8 @@ int main()
     static string tasks[5]; 
     static int taskCount = 0;
 
-    cout << "--- System Online (V4.7 - Complete) ---" << endl;
-    cout << "(Commands: hi, status, battery, list, remind me at, remember, fact, exit)" << endl;
+    cout << "--- System Online (V4.8 - Advanced) ---" << endl;
+    cout << "(Commands: hi, status, search for [topic], battery, list, exit)" << endl;
 
     while (true)
     {
@@ -74,7 +74,7 @@ int main()
         }
         else if (lowerInput == "hi" || lowerInput == "hello") 
         {
-            cout << "Assistant: Hello! How can I help you today?" << endl;
+            cout << "Assistant: Hello! I am your virtual assistant. How can I help you today?" << endl;
         }
 
         // --- 3. Tesla Battery Logic ---
@@ -118,17 +118,17 @@ int main()
         // --- 5. Success Task List ---
         else if (lowerInput == "add task") {
             if (taskCount < 5) {
-                cout << "Assistant: Task to add: ";
+                cout << "Assistant: What task would you like to add?: ";
                 string newTask;
                 getline(cin, newTask);
                 tasks[taskCount] = newTask;
                 taskCount++;
-                cout << "Assistant: Added. ✅" << endl;
-            } else cout << "Assistant: List full! ❌" << endl;
+                cout << "Assistant: Task added. ✅" << endl;
+            } else cout << "Assistant: List is full! ❌" << endl;
         }
         else if (lowerInput == "list" || lowerInput == "tasks") {
             cout << "\n--- Your Success Task List ---" << endl;
-            if (taskCount == 0) cout << "No tasks yet. ✨" << endl;
+            if (taskCount == 0) cout << "No tasks for now. ✨" << endl;
             else {
                 for (int i = 0; i < taskCount; i++) cout << i + 1 << ". " << tasks[i] << endl;
             }
@@ -157,21 +157,38 @@ int main()
         // --- 8. Professional Shortcuts ---
         else if (lowerInput == "github" || lowerInput == "git")  
         {
-            cout << "Assistant: Opening GitHub... 🚀" << endl;
+            cout << "Assistant: Opening your GitHub... 🚀" << endl;
             system("am start -a android.intent.action.VIEW -d https://github.com/rushsvanth-cmyk");
         }
-        else if (lowerInput == "status")
+        else if (lowerInput == "status" || lowerInput == "info")
         {
             cout << "\n--- Assistant Status ---" << endl;
-            cout << "Version: 4.7 | Developer: Karthikeyan | Goal: Tesla 2035" << endl;
+            cout << "Version: 4.8 | Developer: Karthikeyan | Goal: Tesla Engineer 2035" << endl;
+            cout << "------------------------" << endl;
+        }
+
+        // --- 10. Smart Search Logic (Inside the loop now!) ---
+        else if (lowerInput.find("search for") != string::npos) {
+            string query = input.substr(11); 
+            cout << "Assistant: Certainly Karthikeyan, searching Google for '" << query << "'... 🌐" << endl;
+            string url = "https://www.google.com/search?q=" + query;
+            string command = "am start -a android.intent.action.VIEW -d \"" + url + "\"";
+            system(command.c_str());
+        }
+        
+        // --- 11. Creator Info ---
+        else if (lowerInput == "who is karthikeyan") {
+            cout << "Assistant: Karthikeyan is a future Tesla Engineer! 🏎️" << endl;
+            cout << "Assistant: He is currently building me—his very own virtual assistant. 🔥" << endl;
         }
 
         // Default Response
         else 
         {
-            cout << "Assistant: Try 'hi', 'status', 'fact' or 'battery'!" << endl;
+            cout << "Assistant: I didn't quite catch that. Try 'hi', 'status', or 'search for [topic]'!" << endl;
         }
-    } // <--- While loop ends here
+        
+    } // <--- While loop ends here (வரிசை எண் 178)
 
     return 0; 
 }
