@@ -18,8 +18,8 @@ int main()
     static string tasks[5]; 
     static int taskCount = 0;
 
-    cout << "--- System Online (V4.7 - Complete) ---" << endl;
-    cout << "(Commands: hi, status, battery, list, remind me at, remember, fact, exit)" << endl;
+    cout << "--- System Online (V4.8 - Advanced) ---" << endl;
+    cout << "(Commands: hi, status, search for..., battery, list, exit)" << endl;
 
     while (true)
     {
@@ -56,7 +56,7 @@ int main()
         string lowerInput = input;
         transform(lowerInput.begin(), lowerInput.end(), lowerInput.begin(), [](unsigned char c){ return tolower(c); });
 
-        // --- 2. System Commands ---
+        // --- 2. Basic System Commands ---
         if (lowerInput == "exit" || lowerInput == "quit") 
         {
             cout << "Assistant: Goodbye! Have a wonderful day. 🫂" << endl;
@@ -66,7 +66,7 @@ int main()
         {
             cout << "Assistant: I was developed and built by Karthikeyan. 🛠️" << endl;
         }
-        else if (lowerInput == "date" || lowerInput == "time") 
+        else if (lowerInput == "date" || lowerInput == "time" || lowerInput == "today") 
         {
             time_t now = time(0);
             char* dt = ctime(&now);
@@ -74,7 +74,7 @@ int main()
         }
         else if (lowerInput == "hi" || lowerInput == "hello") 
         {
-            cout << "Assistant: Hello! How can I help you today?" << endl;
+            cout << "Assistant: Hello! I am your virtual assistant. How can I help you today?" << endl;
         }
 
         // --- 3. Tesla Battery Logic ---
@@ -123,7 +123,7 @@ int main()
                 getline(cin, newTask);
                 tasks[taskCount] = newTask;
                 taskCount++;
-                cout << "Assistant: Added. ✅" << endl;
+                cout << "Assistant: Added to list. ✅" << endl;
             } else cout << "Assistant: List full! ❌" << endl;
         }
         else if (lowerInput == "list" || lowerInput == "tasks") {
@@ -134,14 +134,12 @@ int main()
             }
         }
 
-        // --- 6. Memory Backup ---
+        // --- 6. Memory & Facts ---
         else if (lowerInput.find("remember") != string::npos)
         {
             string info = input.substr(9); 
             cout << "Assistant: I have noted: '" << info << "'! 🧠" << endl;
         }
-
-        // --- 7. Random Tech Facts ---
         else if (lowerInput == "fact" || lowerInput == "tech")
         {
             string facts[] = {
@@ -154,7 +152,16 @@ int main()
             cout << "Assistant: Did you know? " << facts[factIndex] << endl;
         }
 
-        // --- 8. Professional Shortcuts ---
+        // --- 7. Smart Search Logic ---
+        else if (lowerInput.find("search for") != string::npos) {
+            string query = input.substr(11); 
+            cout << "Assistant: Certainly Karthikeyan, searching Google for '" << query << "'... 🌐" << endl;
+            string url = "https://www.google.com/search?q=" + query;
+            string command = "am start -a android.intent.action.VIEW -d \"" + url + "\"";
+            system(command.c_str());
+        }
+
+        // --- 8. Professional Status & Identity ---
         else if (lowerInput == "github" || lowerInput == "git")  
         {
             cout << "Assistant: Opening GitHub... 🚀" << endl;
@@ -163,13 +170,16 @@ int main()
         else if (lowerInput == "status")
         {
             cout << "\n--- Assistant Status ---" << endl;
-            cout << "Version: 4.7 | Developer: Karthikeyan | Goal: Tesla 2035" << endl;
+            cout << "Version: 4.8 | Developer: Karthikeyan | Goal: Tesla Engineer 2035 🏎️" << endl;
+        }
+        else if (lowerInput == "who is karthikeyan") {
+            cout << "Assistant: Karthikeyan is a future Tesla Engineer! He is currently building me—his advanced virtual assistant. 🔥" << endl;
         }
 
-        // Default Response
+        // --- Default Response ---
         else 
         {
-            cout << "Assistant: Try 'hi', 'status', 'fact' or 'battery'!" << endl;
+            cout << "Assistant: I didn't quite catch that. Try 'hi', 'status', or 'search for [topic]'!" << endl;
         }
     } // <--- While loop ends here
 
