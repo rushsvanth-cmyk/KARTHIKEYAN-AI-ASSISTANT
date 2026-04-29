@@ -5,6 +5,7 @@
 #include <ctime>
 #include <sstream> 
 #include <unistd.h> 
+#include <fstream> // ஃபைல் சேமிக்க இது புதுசு!
 
 using namespace std;
 
@@ -14,181 +15,114 @@ int main()
     double num1, num2;
     char op;
 
-    // Task List Storage
     static string tasks[5]; 
     static int taskCount = 0;
 
-    cout << "--- System Online (V4.8 - Advanced) ---" << endl;
-    cout << "(Commands: hi, status, search for [topic], battery, list, exit)" << endl;
+    cout << "--- System Online (V5.2 - Professional) ---" << endl;
+    cout << "(Commands: hi, status, write note, motivation, search for, exit)" << endl;
 
     while (true)
     {
         cout << "\nYou: ";
         getline(cin, input);
-
         if (input.empty()) continue;
 
-        // --- 1. Automatic Math Detection ---
+        // 1. Automatic Math Detection
         if (isdigit(input[0])) 
         {
             stringstream ss(input);
             if (ss >> num1 >> op >> num2) 
             {
                 cout << "Assistant (Math): ";
-                switch(op) 
-                {
+                switch(op) {
                     case '+': cout << num1 + num2 << " ✅"; break;
                     case '-': cout << num1 - num2 << " ✅"; break;
                     case '*': cout << num1 * num2 << " ✅"; break;
                     case '/': 
                         if(num2 != 0) cout << num1 / num2 << " ✅";
-                        else cout << "Error: Cannot divide by zero! ❌";
+                        else cout << "Error! ❌";
                         break;
                     case '^': cout << pow(num1, num2) << " 🔥"; break;
                     default: cout << "Unknown operator! 😅";
                 }
-                cout << endl;
-                continue; 
+                cout << endl; continue; 
             }
         }
 
-        // Convert input to lowercase for command matching
         string lowerInput = input;
         transform(lowerInput.begin(), lowerInput.end(), lowerInput.begin(), [](unsigned char c){ return tolower(c); });
 
-        // --- 2. System Commands ---
-        if (lowerInput == "exit" || lowerInput == "quit") 
-        {
-            cout << "Assistant: Goodbye! Have a wonderful day. 🫂" << endl;
+        // 2. System Commands
+        if (lowerInput == "exit" || lowerInput == "quit") {
+            cout << "Assistant: Goodbye Karthikeyan! See you at Tesla. 🫂" << endl;
             break;
         }
-        else if (lowerInput == "who is your owner" || lowerInput == "owner") 
-        {
-            cout << "Assistant: I was developed and built by Karthikeyan. 🛠️" << endl;
+        else if (lowerInput == "hi" || lowerInput == "hello") {
+            cout << "Assistant: Hello creator! How can I help you build today?" << endl;
         }
-        else if (lowerInput == "date" || lowerInput == "time") 
-        {
-            time_t now = time(0);
-            char* dt = ctime(&now);
-            cout << "Assistant: " << dt;
+        
+        // 3. Dev Notepad (புதிய வசதி)
+        else if (lowerInput == "write note") {
+            ofstream outfile;
+            outfile.open("karthi_notes.txt", ios_base::app);
+            cout << "Assistant: என்ன குறிப்பு எழுதணும் நண்பா?: ";
+            string note; getline(cin, note);
+            outfile << note << endl;
+            outfile.close();
+            cout << "Assistant: குறிப்பு சேமிக்கப்பட்டது! 📝" << endl;
         }
-        else if (lowerInput == "hi" || lowerInput == "hello") 
-        {
-            cout << "Assistant: Hello! I am your virtual assistant. How can I help you today?" << endl;
-        }
-
-        // --- 3. Tesla Battery Logic ---
-        else if (lowerInput == "battery" || lowerInput == "range") 
-        {
-            double battery_percent;
-            cout << "Assistant: What is your current battery percentage (0-100)? ";
-            cin >> battery_percent;
-            cin.ignore(1000, '\n'); 
-
-            if (battery_percent >= 0 && battery_percent <= 100) 
-            {
-                double range = battery_percent * 5;
-                cout << "Assistant: Estimated range: " << range << " KM! 🚗🔋" << endl;
-            } 
-            else cout << "Assistant: Invalid percentage! ❌" << endl;
+        else if (lowerInput == "read note") {
+            ifstream infile("karthi_notes.txt");
+            string line;
+            cout << "--- Your Dev Notes ---" << endl;
+            if (infile.is_open()) {
+                while (getline(infile, line)) cout << "- " << line << endl;
+                infile.close();
+            } else cout << "குறிப்புகள் எதுவும் இல்லை! ✨" << endl;
         }
 
-        // --- 4. Reminder Logic ---
-        else if (lowerInput.find("remind me at") != string::npos)
-        {
-            string alarmTime = lowerInput.substr(13); 
-            cout << "Assistant: Noted. I'll remind you at " << alarmTime << "! ⏰" << endl;
-            
-            bool reminded = false;
-            while (!reminded) {
-                time_t now = time(0);
-                tm *ltm = localtime(&now);
-                char currentTime[6];
-                strftime(currentTime, sizeof(currentTime), "%H:%M", ltm);
-                
-                if (string(currentTime) == alarmTime)
-                {
-                    cout << "\n[REMINDER] 🔔 It is " << alarmTime << "! Time to work!" << endl;
-                    reminded = true;
-                }
-                sleep(2); 
-            }
-        }
-
-        // --- 5. Success Task List ---
-        else if (lowerInput == "add task") {
-            if (taskCount < 5) {
-                cout << "Assistant: What task would you like to add?: ";
-                string newTask;
-                getline(cin, newTask);
-                tasks[taskCount] = newTask;
-                taskCount++;
-                cout << "Assistant: Task added. ✅" << endl;
-            } else cout << "Assistant: List is full! ❌" << endl;
-        }
-        else if (lowerInput == "list" || lowerInput == "tasks") {
-            cout << "\n--- Your Success Task List ---" << endl;
-            if (taskCount == 0) cout << "No tasks for now. ✨" << endl;
-            else {
-                for (int i = 0; i < taskCount; i++) cout << i + 1 << ". " << tasks[i] << endl;
-            }
-        }
-
-        // --- 6. Memory Backup ---
-        else if (lowerInput.find("remember") != string::npos)
-        {
-            string info = input.substr(9); 
-            cout << "Assistant: I have noted: '" << info << "'! 🧠" << endl;
-        }
-
-        // --- 7. Random Tech Facts ---
-        else if (lowerInput == "fact" || lowerInput == "tech")
-        {
-            string facts[] = {
-                "The first computer virus was created in 1971! 🦠",
-                "C++ was created by Bjarne Stroustrup! 👨‍💻",
-                "The first programmer was Ada Lovelace! 👩‍💻",
-                "Tesla car software runs on Linux! 🏎️"
+        // 4. Motivation (புதிய வசதி)
+        else if (lowerInput == "motivation") {
+            string quotes[] = {
+                "கார்த்திகேயன், 2035-ல் நீ ஒரு டெஸ்லா இன்ஜினியர்! 🏎️",
+                "ஒவ்வொரு வரியும் ஒரு வெற்றி! கோடிங்கைத் தொடரு. 💻",
+                "கடின உழைப்புக்கு எப்போதுமே பலன் உண்டு. 🔥",
+                "உன் அசிஸ்டன்ட் உன்னை விட புத்திசாலி ஆகப்போகுது! 🚀"
             };
-            int factIndex = time(0) % 4;
-            cout << "Assistant: Did you know? " << facts[factIndex] << endl;
+            srand(time(0));
+            cout << "Assistant: " << quotes[rand() % 4] << endl;
         }
 
-        // --- 8. Professional Shortcuts ---
-        else if (lowerInput == "github" || lowerInput == "git")  
-        {
-            cout << "Assistant: Opening your GitHub... 🚀" << endl;
+        // 5. Battery Logic
+        else if (lowerInput == "battery" || lowerInput == "range") {
+            double p; cout << "Assistant: Battery %? ";
+            cin >> p; cin.ignore(1000, '\n'); 
+            if (p >= 0 && p <= 100) cout << "Assistant: Range: " << p * 5 << " KM! 🚗🔋" << endl;
+            else cout << "Assistant: Invalid! ❌" << endl;
+        }
+
+        // 6. Search & GitHub
+        else if (lowerInput.find("search for") != string::npos) {
+            string query = input.substr(11);
+            string url = "https://www.google.com/search?q=" + query;
+            string cmd = "am start -a android.intent.action.VIEW -d \"" + url + "\"";
+            system(cmd.c_str());
+        }
+        else if (lowerInput == "github") {
             system("am start -a android.intent.action.VIEW -d https://github.com/rushsvanth-cmyk");
         }
-        else if (lowerInput == "status" || lowerInput == "info")
-        {
-            cout << "\n--- Assistant Status ---" << endl;
-            cout << "Version: 4.8 | Developer: Karthikeyan | Goal: Tesla Engineer 2035" << endl;
-            cout << "------------------------" << endl;
-        }
 
-        // --- 10. Smart Search Logic (Inside the loop now!) ---
-        else if (lowerInput.find("search for") != string::npos) {
-            string query = input.substr(11); 
-            cout << "Assistant: Certainly Karthikeyan, searching Google for '" << query << "'... 🌐" << endl;
-            string url = "https://www.google.com/search?q=" + query;
-            string command = "am start -a android.intent.action.VIEW -d \"" + url + "\"";
-            system(command.c_str());
+        // 7. Status & Others
+        else if (lowerInput == "status") {
+            cout << "V5.2 | Dev: Karthikeyan | Target: Tesla 2035 🏎️" << endl;
         }
-        
-        // --- 11. Creator Info ---
         else if (lowerInput == "who is karthikeyan") {
-            cout << "Assistant: Karthikeyan is a future Tesla Engineer! 🏎️" << endl;
-            cout << "Assistant: He is currently building me—his very own virtual assistant. 🔥" << endl;
+            cout << "Assistant: A future Tesla Legend and my creator! 🔥" << endl;
         }
-
-        // Default Response
-        else 
-        {
-            cout << "Assistant: I didn't quite catch that. Try 'hi', 'status', or 'search for [topic]'!" << endl;
+        else {
+            cout << "Assistant: புரியவில்லை! 'status' அல்லது 'motivation' என்று டைப் செய்யவும்." << endl;
         }
-        
-    } // <--- While loop ends here (வரிசை எண் 178)
-
+    }
     return 0; 
 }
+
