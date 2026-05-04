@@ -5,7 +5,7 @@
 #include <ctime>
 #include <sstream> 
 #include <unistd.h> 
-#include <fstream> // ஃபைல் சேமிக்க இது புதுசு!
+#include <fstream> 
 
 using namespace std;
 
@@ -18,14 +18,17 @@ int main()
     static string tasks[5]; 
     static int taskCount = 0;
 
-    cout << "--- System Online (V5.2 - Professional) ---" << endl;
-    cout << "(Commands: hi, status, write note, motivation, search for, exit)" << endl;
+    cout << "--- System Online (V5.3 - English Edition) ---" << endl;
+    cout << "(Commands: hi, status, write note, motivation, add event, today, exit)" << endl;
 
     while (true)
     {
         cout << "\nYou: ";
         getline(cin, input);
         if (input.empty()) continue;
+
+        string lowerInput = input;
+        transform(lowerInput.begin(), lowerInput.end(), lowerInput.begin(), [](unsigned char c){ return tolower(c); });
 
         // 1. Automatic Math Detection
         if (isdigit(input[0])) 
@@ -40,7 +43,7 @@ int main()
                     case '*': cout << num1 * num2 << " ✅"; break;
                     case '/': 
                         if(num2 != 0) cout << num1 / num2 << " ✅";
-                        else cout << "Error! ❌";
+                        else cout << "Error! Cannot divide by zero. ❌";
                         break;
                     case '^': cout << pow(num1, num2) << " 🔥"; break;
                     default: cout << "Unknown operator! 😅";
@@ -49,78 +52,94 @@ int main()
             }
         }
 
-        string lowerInput = input;
-        transform(lowerInput.begin(), lowerInput.end(), lowerInput.begin(), [](unsigned char c){ return tolower(c); });
-
         // 2. System Commands
         if (lowerInput == "exit" || lowerInput == "quit") {
-            cout << "Assistant: Goodbye Karthikeyan! See you at Tesla. 🫂" << endl;
+            cout << "Assistant: Goodbye Karthikeyan! Heading to Tesla HQ... 🏎️🫂" << endl;
             break;
         }
         else if (lowerInput == "hi" || lowerInput == "hello") {
-            cout << "Assistant: Hello creator! How can I help you build today?" << endl;
+            cout << "Assistant: Hello creator! Ready to build the future today?" << endl;
         }
         
-        // 3. Dev Notepad (புதிய வசதி)
+        // 3. Dev Notepad
         else if (lowerInput == "write note") {
             ofstream outfile;
-            outfile.open("karthi_notes.txt", ios_base::app);
-            cout << "Assistant: என்ன குறிப்பு எழுதணும் நண்பா?: ";
+            outfile.open("notes.txt", ios_base::app);
+            cout << "Assistant: What should I write down?: ";
             string note; getline(cin, note);
             outfile << note << endl;
             outfile.close();
-            cout << "Assistant: குறிப்பு சேமிக்கப்பட்டது! 📝" << endl;
+            cout << "Assistant: Note saved to memory! 📝" << endl;
         }
         else if (lowerInput == "read note") {
-            ifstream infile("karthi_notes.txt");
+            ifstream infile("notes.txt");
             string line;
             cout << "--- Your Dev Notes ---" << endl;
             if (infile.is_open()) {
                 while (getline(infile, line)) cout << "- " << line << endl;
                 infile.close();
-            } else cout << "குறிப்புகள் எதுவும் இல்லை! ✨" << endl;
+            } else cout << "No notes found! ✨" << endl;
         }
 
-        // 4. Motivation (புதிய வசதி)
+        // 4. Motivation
         else if (lowerInput == "motivation") {
             string quotes[] = {
-                "கார்த்திகேயன், 2035-ல் நீ ஒரு டெஸ்லா இன்ஜினியர்! 🏎️",
-                "ஒவ்வொரு வரியும் ஒரு வெற்றி! கோடிங்கைத் தொடரு. 💻",
-                "கடின உழைப்புக்கு எப்போதுமே பலன் உண்டு. 🔥",
-                "உன் அசிஸ்டன்ட் உன்னை விட புத்திசாலி ஆகப்போகுது! 🚀"
+                "Karthikeyan, the stage at Tesla 2035 is waiting for you! 🏎️",
+                "Every line of code is a step toward success. Keep going! 💻",
+                "Hard work always pays off. Stay focused! 🔥",
+                "Your assistant is getting smarter every day, just like you! 🚀"
             };
             srand(time(0));
             cout << "Assistant: " << quotes[rand() % 4] << endl;
         }
 
-        // 5. Battery Logic
-        else if (lowerInput == "battery" || lowerInput == "range") {
-            double p; cout << "Assistant: Battery %? ";
-            cin >> p; cin.ignore(1000, '\n'); 
-            if (p >= 0 && p <= 100) cout << "Assistant: Range: " << p * 5 << " KM! 🚗🔋" << endl;
-            else cout << "Assistant: Invalid! ❌" << endl;
+        // 5. Special Day Reminder (Fixed placement inside loop)
+        else if (lowerInput == "add event") {
+            string date, eventName;
+            cout << "Assistant: Enter the date to remember (DD/MM): ";
+            cin >> date;
+            cout << "Assistant: What is the occasion?: ";
+            cin.ignore();
+            getline(cin, eventName);
+            
+            ofstream eventFile;
+            eventFile.open("events.txt", ios_base::app);
+            eventFile << date << " " << eventName << endl;
+            eventFile.close();
+            cout << "Assistant: Noted! I'll remember " << eventName << " on " << date << ". ✅" << endl;
+        }
+        else if (lowerInput == "check events" || lowerInput == "today") {
+            time_t now = time(0);
+            tm *ltm = localtime(&now);
+            char curDate[6];
+            strftime(curDate, sizeof(curDate), "%d/%m", ltm); 
+
+            ifstream eventFile("events.txt");
+            string fileDate, fileEvent;
+            bool found = false;
+
+            cout << "Assistant: Checking your schedule..." << endl;
+            while (eventFile >> fileDate) {
+                getline(eventFile, fileEvent);
+                if (fileDate == string(curDate)) {
+                    cout << "🔔 [Special Event Today!]:" << fileEvent << " 🚀" << endl;
+                    found = true;
+                }
+            }
+            if (!found) cout << "Assistant: Nothing special on the calendar for today, Karthikeyan! ✨" << endl;
+            eventFile.close();
         }
 
-        // 6. Search & GitHub
-        else if (lowerInput.find("search for") != string::npos) {
-            string query = input.substr(11);
-            string url = "https://www.google.com/search?q=" + query;
-            string cmd = "am start -a android.intent.action.VIEW -d \"" + url + "\"";
-            system(cmd.c_str());
+        // 6. Tesla Battery & Status
+        else if (lowerInput == "battery") {
+            double p; cout << "Assistant: Battery %? "; cin >> p; cin.ignore();
+            if (p >= 0 && p <= 100) cout << "Assistant: Estimated Range: " << p * 5 << " KM! 🚗🔋" << endl;
         }
-        else if (lowerInput == "github") {
-            system("am start -a android.intent.action.VIEW -d https://github.com/rushsvanth-cmyk");
-        }
-
-        // 7. Status & Others
         else if (lowerInput == "status") {
-            cout << "V5.2 | Dev: Karthikeyan | Target: Tesla 2035 🏎️" << endl;
-        }
-        else if (lowerInput == "who is karthikeyan") {
-            cout << "Assistant: A future Tesla Legend and my creator! 🔥" << endl;
+            cout << "V5.3 | Dev: Karthikeyan | Goal: Tesla Engineer 2035 🏎️" << endl;
         }
         else {
-            cout << "Assistant: புரியவில்லை! 'status' அல்லது 'motivation' என்று டைப் செய்யவும்." << endl;
+            cout << "Assistant: Sorry, I didn't get that. Try 'status' or 'motivation'!" << endl;
         }
     }
     return 0; 
