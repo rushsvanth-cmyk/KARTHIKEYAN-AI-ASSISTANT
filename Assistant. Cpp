@@ -18,8 +18,8 @@ int main()
     static string tasks[5]; 
     static int taskCount = 0;
 
-    cout << "--- System Online (V5.4 - Environmental) ---" << endl;
-    cout << "(Commands: hi, status, weather, hydrate, motivation, add event, exit)" << endl;
+    cout << "--- System Online (V5.5 - Tesla Power Edition) ---" << endl;
+    cout << "(Commands: hi, status, battery, charge, weather, write note, today, exit)" << endl;
 
     while (true)
     {
@@ -96,197 +96,86 @@ int main()
         // 5. Special Day Reminder
         else if (lowerInput == "add event") {
             string date, eventName;
-            cout << "Assistant: Enter the date (DD/MM): ";
+            cout << "Assistant: Enter the date to remember (DD/MM): ";
             cin >> date;
-            cout << "Assistant: Occasion?: ";
+            cout << "Assistant: What is the occasion?: ";
             cin.ignore();
             getline(cin, eventName);
-            ofstream eventFile("events.txt", ios_base::app);
+            
+            ofstream eventFile;
+            eventFile.open("events.txt", ios_base::app);
             eventFile << date << " " << eventName << endl;
             eventFile.close();
-            cout << "Assistant: Event saved. ✅" << endl;
+            cout << "Assistant: Noted! I'll remember " << eventName << " on " << date << ". ✅" << endl;
         }
-        else if (lowerInput == "today") {
-            time_t now = time(0); tm *ltm = localtime(&now);
-            char curDate[6]; strftime(curDate, sizeof(curDate), "%d/%m", ltm); 
+        else if (lowerInput == "check events" || lowerInput == "today") {
+            time_t now = time(0);
+            tm *ltm = localtime(&now);
+            char curDate[6];
+            strftime(curDate, sizeof(curDate), "%d/%m", ltm); 
+
             ifstream eventFile("events.txt");
-            string fDate, fEvent; bool found = false;
-            while (eventFile >> fDate) {
-                getline(eventFile, fEvent);
-                if (fDate == string(curDate)) {
-                    cout << "🔔 [Event Today!]:" << fEvent << " 🚀" << endl;
+            string fileDate, fileEvent;
+            bool found = false;
+
+            cout << "Assistant: Checking your schedule..." << endl;
+            while (eventFile >> fileDate) {
+                getline(eventFile, fileEvent);
+                if (fileDate == string(curDate)) {
+                    cout << "🔔 [Special Event Today!]:" << fileEvent << " 🚀" << endl;
                     found = true;
                 }
             }
-            if (!found) cout << "Assistant: Nothing special today! ✨" << endl;
-        }
-
-        // 6. Environment (Chennai Focus)
-        else if (lowerInput == "weather" || lowerInput == "climate") {
-            cout << "Assistant: Checking Chennai weather for you... ☀️" << endl;
-            system("am start -a android.intent.action.VIEW -d \"https://www.google.com/search?q=weather+chennai\"");
-        }
-        else if (lowerInput == "hydrate" || lowerInput == "health") {
-            cout << "Assistant: It's likely warm in Chennai. Drink water, Karthikeyan! 💧" << endl;
-        }
-
-        // 7. Tesla Battery & Status
-        else if (lowerInput == "battery") {
-            double p; cout << "Assistant: Battery %? "; cin >> p; cin.ignore();
-            if (p >= 0 && p <= 100) cout << "Assistant: Estimated Range: " << p * 5 << " KM! 🚗🔋" << endl;
-        }
-        else if (lowerInput == "status") {
-            cout << "V5.4 | Dev: Karthikeyan | Location: Chennai | Goal: Tesla 2035 🏎️" << endl;
-        }
-        else {
-            cout << "Assistant: Command not recognized. Try 'status' or 'weather'!" << endl;
-        }
-    } // Loop ends here
-    return 0; 
-}#include <iostream>
-#include <string>
-#include <algorithm> 
-#include <cmath>
-#include <ctime>
-#include <sstream> 
-#include <unistd.h> 
-#include <fstream> 
-
-using namespace std;
-
-int main() 
-{
-    string input;
-    double num1, num2;
-    char op;
-
-    static string tasks[5]; 
-    static int taskCount = 0;
-
-    cout << "--- System Online (V5.4 - Environmental) ---" << endl;
-    cout << "(Commands: hi, status, weather, hydrate, motivation, add event, exit)" << endl;
-
-    while (true)
-    {
-        cout << "\nYou: ";
-        getline(cin, input);
-        if (input.empty()) continue;
-
-        string lowerInput = input;
-        transform(lowerInput.begin(), lowerInput.end(), lowerInput.begin(), [](unsigned char c){ return tolower(c); });
-
-        // 1. Automatic Math Detection
-        if (isdigit(input[0])) 
-        {
-            stringstream ss(input);
-            if (ss >> num1 >> op >> num2) 
-            {
-                cout << "Assistant (Math): ";
-                switch(op) {
-                    case '+': cout << num1 + num2 << " ✅"; break;
-                    case '-': cout << num1 - num2 << " ✅"; break;
-                    case '*': cout << num1 * num2 << " ✅"; break;
-                    case '/': 
-                        if(num2 != 0) cout << num1 / num2 << " ✅";
-                        else cout << "Error! Cannot divide by zero. ❌";
-                        break;
-                    case '^': cout << pow(num1, num2) << " 🔥"; break;
-                    default: cout << "Unknown operator! 😅";
-                }
-                cout << endl; continue; 
-            }
-        }
-
-        // 2. System Commands
-        if (lowerInput == "exit" || lowerInput == "quit") {
-            cout << "Assistant: Goodbye Karthikeyan! Heading to Tesla HQ... 🏎️🫂" << endl;
-            break;
-        }
-        else if (lowerInput == "hi" || lowerInput == "hello") {
-            cout << "Assistant: Hello creator! Ready to build the future today?" << endl;
-        }
-        
-        // 3. Dev Notepad
-        else if (lowerInput == "write note") {
-            ofstream outfile;
-            outfile.open("notes.txt", ios_base::app);
-            cout << "Assistant: What should I write down?: ";
-            string note; getline(cin, note);
-            outfile << note << endl;
-            outfile.close();
-            cout << "Assistant: Note saved to memory! 📝" << endl;
-        }
-        else if (lowerInput == "read note") {
-            ifstream infile("notes.txt");
-            string line;
-            cout << "--- Your Dev Notes ---" << endl;
-            if (infile.is_open()) {
-                while (getline(infile, line)) cout << "- " << line << endl;
-                infile.close();
-            } else cout << "No notes found! ✨" << endl;
-        }
-
-        // 4. Motivation
-        else if (lowerInput == "motivation") {
-            string quotes[] = {
-                "Karthikeyan, the stage at Tesla 2035 is waiting for you! 🏎️",
-                "Every line of code is a step toward success. Keep going! 💻",
-                "Hard work always pays off. Stay focused! 🔥",
-                "Your assistant is getting smarter every day, just like you! 🚀"
-            };
-            srand(time(0));
-            cout << "Assistant: " << quotes[rand() % 4] << endl;
-        }
-
-        // 5. Special Day Reminder
-        else if (lowerInput == "add event") {
-            string date, eventName;
-            cout << "Assistant: Enter the date (DD/MM): ";
-            cin >> date;
-            cout << "Assistant: Occasion?: ";
-            cin.ignore();
-            getline(cin, eventName);
-            ofstream eventFile("events.txt", ios_base::app);
-            eventFile << date << " " << eventName << endl;
+            if (!found) cout << "Assistant: Nothing special on the calendar for today, Karthikeyan! ✨" << endl;
             eventFile.close();
-            cout << "Assistant: Event saved. ✅" << endl;
-        }
-        else if (lowerInput == "today") {
-            time_t now = time(0); tm *ltm = localtime(&now);
-            char curDate[6]; strftime(curDate, sizeof(curDate), "%d/%m", ltm); 
-            ifstream eventFile("events.txt");
-            string fDate, fEvent; bool found = false;
-            while (eventFile >> fDate) {
-                getline(eventFile, fEvent);
-                if (fDate == string(curDate)) {
-                    cout << "🔔 [Event Today!]:" << fEvent << " 🚀" << endl;
-                    found = true;
-                }
-            }
-            if (!found) cout << "Assistant: Nothing special today! ✨" << endl;
         }
 
-        // 6. Environment (Chennai Focus)
-        else if (lowerInput == "weather" || lowerInput == "climate") {
-            cout << "Assistant: Checking Chennai weather for you... ☀️" << endl;
-            system("am start -a android.intent.action.VIEW -d \"https://www.google.com/search?q=weather+chennai\"");
-        }
-        else if (lowerInput == "hydrate" || lowerInput == "health") {
-            cout << "Assistant: It's likely warm in Chennai. Drink water, Karthikeyan! 💧" << endl;
-        }
-
-        // 7. Tesla Battery & Status
+        // 6. Tesla Battery Core Logic
         else if (lowerInput == "battery") {
             double p; cout << "Assistant: Battery %? "; cin >> p; cin.ignore();
             if (p >= 0 && p <= 100) cout << "Assistant: Estimated Range: " << p * 5 << " KM! 🚗🔋" << endl;
+            else cout << "Assistant: Please enter a percentage between 0 and 100! ❌" << endl;
         }
+        else if (lowerInput == "charge") {
+            double current_pct;
+            cout << "Assistant: Current battery percentage (0-100)?: ";
+            cin >> current_pct;
+            cin.ignore();
+            
+            if (current_pct >= 0 && current_pct < 100) {
+                double needed = 100.0 - current_pct;
+                // Assuming a generic 75 kWh battery pack pack for calculation logic
+                double home_rate = 0.12;       // Roughly 12% charged per hour on Home AC Wall Connector
+                double supercharger_rate = 3.5; // Roughly 3.5% charged per minute down to 80%
+                
+                cout << "\n--- Charging Estimates to 100% ---" << endl;
+                cout << "⚡ Tesla Home Wall Connector: Approx. " << (needed / home_rate) / 60 << " hours." << endl;
+                cout << "⚡ Tesla Supercharger V3: Approx. " << needed / 2.0 << " minutes (tapering applied)." << endl;
+            } else if (current_pct == 100) {
+                cout << "Assistant: Battery is already fully charged! Pack is ready to roll. 🏎️⚡" << endl;
+            } else {
+                cout << "Assistant: Invalid calculation data. ❌" << endl;
+            }
+        }
+
+        // 7. Environment & Weather (Safely inside the loop now!)
+        else if (lowerInput == "weather" || lowerInput == "climate") {
+            cout << "Assistant: Opening the local weather report for Chennai... ☀️" << endl;
+            system("am start -a android.intent.action.VIEW -d \"https://www.google.com/search?q=weather+chennai\"");
+        }
+        else if (lowerInput == "hydrate" || lowerInput == "health") {
+            cout << "Assistant: Karthikeyan, drink some water to keep your brain fueled up! 💧" << endl;
+        }
+
+        // 8. Status
         else if (lowerInput == "status") {
-            cout << "V5.4 | Dev: Karthikeyan | Location: Chennai | Goal: Tesla 2035 🏎️" << endl;
+            cout << "V5.5 | Dev: Karthikeyan | Field: EV Systems | Goal: Tesla Engineer 2035 🏎️" << endl;
         }
         else {
-            cout << "Assistant: Command not recognized. Try 'status' or 'weather'!" << endl;
+            cout << "Assistant: Sorry, I didn't get that. Try 'status', 'charge', or 'motivation'!" << endl;
         }
-    } // Loop ends here
+    } // <-- This brace successfully closes the while loop!
     return 0; 
 }
+
 
