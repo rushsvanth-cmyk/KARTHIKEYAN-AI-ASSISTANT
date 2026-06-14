@@ -18,8 +18,8 @@ int main()
     static string tasks[5]; 
     static int taskCount = 0;
 
-    cout << "--- System Online (V5.5 - Tesla Power Edition) ---" << endl;
-    cout << "(Commands: hi, status, battery, charge, weather, write note, today, exit)" << endl;
+    cout << "--- System Online (V5.6 - Tesla Fleet Edition) ---" << endl;
+    cout << "(Commands: hi, status, battery, charge, model, weather, write note, today, exit)" << endl;
 
     while (true)
     {
@@ -144,13 +144,12 @@ int main()
             
             if (current_pct >= 0 && current_pct < 100) {
                 double needed = 100.0 - current_pct;
-                // Assuming a generic 75 kWh battery pack pack for calculation logic
-                double home_rate = 0.12;       // Roughly 12% charged per hour on Home AC Wall Connector
-                double supercharger_rate = 3.5; // Roughly 3.5% charged per minute down to 80%
+                double home_rate = 0.12;       
+                double supercharger_rate = 2.0; 
                 
                 cout << "\n--- Charging Estimates to 100% ---" << endl;
                 cout << "⚡ Tesla Home Wall Connector: Approx. " << (needed / home_rate) / 60 << " hours." << endl;
-                cout << "⚡ Tesla Supercharger V3: Approx. " << needed / 2.0 << " minutes (tapering applied)." << endl;
+                cout << "⚡ Tesla Supercharger V3: Approx. " << needed / supercharger_rate << " minutes." << endl;
             } else if (current_pct == 100) {
                 cout << "Assistant: Battery is already fully charged! Pack is ready to roll. 🏎️⚡" << endl;
             } else {
@@ -158,7 +157,30 @@ int main()
             }
         }
 
-        // 7. Environment & Weather (Safely inside the loop now!)
+        // --- 7. NEW: Tesla Model Fleet Customizer (V5.6) ---
+        else if (lowerInput == "model" || lowerInput == "tesla car") {
+            int choice;
+            cout << "\n--- Select Tesla Model ---" << endl;
+            cout << "1. Model S (Plaid)\n2. Model 3 (Long Range)\n3. Model X (Plaid)\n4. Model Y (Performance)" << endl;
+            cout << "Enter choice (1-4): ";
+            cin >> choice;
+            cin.ignore();
+
+            cout << "\n--- Vehicle Performance Profile ---" << endl;
+            if (choice == 1) {
+                cout << "🚗 Model: Tesla Model S Plaid\n🔋 Est. Range: 637 KM\n⚡ 0-100 KM/H: 2.1 Seconds 🔥" << endl;
+            } else if (choice == 2) {
+                cout << "🚗 Model: Tesla Model 3 Long Range\n🔋 Est. Range: 576 KM\n⚡ 0-100 KM/H: 4.2 Seconds" << endl;
+            } else if (choice == 3) {
+                cout << "🚗 Model: Tesla Model X Plaid\n🔋 Est. Range: 536 KM\n⚡ 0-100 KM/H: 2.6 Seconds" << endl;
+            } else if (choice == 4) {
+                cout << "🚗 Model: Tesla Model Y Performance\n🔋 Est. Range: 488 KM\n⚡ 0-100 KM/H: 3.6 Seconds" << endl;
+            } else {
+                cout << "Assistant: Invalid selection! ❌" << endl;
+            }
+        }
+
+        // 8. Environment & Weather
         else if (lowerInput == "weather" || lowerInput == "climate") {
             cout << "Assistant: Opening the local weather report for Chennai... ☀️" << endl;
             system("am start -a android.intent.action.VIEW -d \"https://www.google.com/search?q=weather+chennai\"");
@@ -167,15 +189,17 @@ int main()
             cout << "Assistant: Karthikeyan, drink some water to keep your brain fueled up! 💧" << endl;
         }
 
-        // 8. Status
+        // 9. Status & Profile Links
         else if (lowerInput == "status") {
-            cout << "V5.5 | Dev: Karthikeyan | Field: EV Systems | Goal: Tesla Engineer 2035 🏎️" << endl;
+            cout << "V5.6 | Dev: Karthikeyan | Field: EV Systems | Goal: Tesla Engineer 2035 🏎️" << endl;
+        }
+        else if (lowerInput == "github" || lowerInput == "git") {
+            system("am start -a android.intent.action.VIEW -d https://github.com/rushsvanth-cmyk");
         }
         else {
-            cout << "Assistant: Sorry, I didn't get that. Try 'status', 'charge', or 'motivation'!" << endl;
+            cout << "Assistant: Sorry, I didn't get that. Try 'status', 'model', or 'motivation'!" << endl;
         }
-    } // <-- This brace successfully closes the while loop!
+    } 
     return 0; 
 }
-
 
