@@ -18,8 +18,8 @@ int main()
     static string tasks[5]; 
     static int taskCount = 0;
 
-    cout << "--- System Online (V5.6 - Tesla Fleet Edition) ---" << endl;
-    cout << "(Commands: hi, status, battery, charge, model, weather, write note, today, exit)" << endl;
+    cout << "--- System Online (V5.7 - Schedule Optimizer) ---" << endl;
+    cout << "(Commands: hi, status, battery, charge, model, schedule, weather, write note, today, exit)" << endl;
 
     while (true)
     {
@@ -106,7 +106,7 @@ int main()
             eventFile.open("events.txt", ios_base::app);
             eventFile << date << " " << eventName << endl;
             eventFile.close();
-            cout << "Assistant: Noted! I'll remember " << eventName << " on " << date << ". ✅" << endl;
+            cout << "Assistant: Noted! I'll remember " << eventName << " on " << date << ". ✅" << date;
         }
         else if (lowerInput == "check events" || lowerInput == "today") {
             time_t now = time(0);
@@ -157,7 +157,7 @@ int main()
             }
         }
 
-        // --- 7. NEW: Tesla Model Fleet Customizer (V5.6) ---
+        // 7. Tesla Model Fleet Customizer
         else if (lowerInput == "model" || lowerInput == "tesla car") {
             int choice;
             cout << "\n--- Select Tesla Model ---" << endl;
@@ -180,7 +180,19 @@ int main()
             }
         }
 
-        // 8. Environment & Weather
+        // --- 8. NEW: Balanced Schedule Optimizer (V5.7) ---
+        else if (lowerInput == "schedule" || lowerInput == "routine") {
+            cout << "\n--- 🎯 Karthikeyan's Daily Balance Routine ---" << endl;
+            cout << "🌅 Morning (Discipline & Fitness):" << endl;
+            cout << "   - 06:00 AM to 07:30 AM -> RSS Shakha Training (Physical & Leadership Drill)" << endl;
+            cout << "💻 Afternoon/Evening (Core Engineering Goal):" << endl;
+            cout << "   - 04:00 PM to 06:00 PM -> C++ Advanced Coding & Algorithm Practice" << endl;
+            cout << "   - 06:00 PM to 07:00 PM -> Project Building & GitHub Commit 🟩" << endl;
+            cout << "🧠 Developer Reminder:" << endl;
+            cout << "   - RSS gives you the discipline. C++ gives you the skill. Balance is key!" << endl;
+        }
+
+        // 9. Environment & Weather
         else if (lowerInput == "weather" || lowerInput == "climate") {
             cout << "Assistant: Opening the local weather report for Chennai... ☀️" << endl;
             system("am start -a android.intent.action.VIEW -d \"https://www.google.com/search?q=weather+chennai\"");
@@ -189,15 +201,15 @@ int main()
             cout << "Assistant: Karthikeyan, drink some water to keep your brain fueled up! 💧" << endl;
         }
 
-        // 9. Status & Profile Links
+        // 10. Status & Profile Links
         else if (lowerInput == "status") {
-            cout << "V5.6 | Dev: Karthikeyan | Field: EV Systems | Goal: Tesla Engineer 2035 🏎️" << endl;
+            cout << "V5.7 | Dev: Karthikeyan | Routine: Balanced | Goal: Tesla Engineer 2035 🏎️" << endl;
         }
         else if (lowerInput == "github" || lowerInput == "git") {
             system("am start -a android.intent.action.VIEW -d https://github.com/rushsvanth-cmyk");
         }
         else {
-            cout << "Assistant: Sorry, I didn't get that. Try 'status', 'model', or 'motivation'!" << endl;
+            cout << "Assistant: Sorry, I didn't get that. Try 'status', 'schedule', or 'model'!" << endl;
         }
     } 
     return 0; 
