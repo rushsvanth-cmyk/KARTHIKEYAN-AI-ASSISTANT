@@ -9,6 +9,12 @@
 
 using namespace std;
 
+// Quick helper function to draw the system banner
+void displayBanner() {
+    cout << "--- System Online (V5.9 - Terminal Optimizer) ---" << endl;
+    cout << "(Commands: hi, status, battery, charge, model, schedule, milestones, clear, weather, exit)" << endl;
+}
+
 int main() 
 {
     string input;
@@ -18,8 +24,7 @@ int main()
     static string tasks[5]; 
     static int taskCount = 0;
 
-    cout << "--- System Online (V5.7 - Schedule Optimizer) ---" << endl;
-    cout << "(Commands: hi, status, battery, charge, model, schedule, weather, write note, today, exit)" << endl;
+    displayBanner();
 
     while (true)
     {
@@ -61,7 +66,15 @@ int main()
             cout << "Assistant: Hello creator! Ready to build the future today?" << endl;
         }
         
-        // 3. Dev Notepad
+        // --- 3. NEW: Clear Screen Logic (V5.9) ---
+        else if (lowerInput == "clear" || lowerInput == "cls") {
+            // ANSI escape code to clear terminal screen and home the cursor
+            cout << "\033[2J\033[1;1H"; 
+            displayBanner();
+            continue;
+        }
+
+        // 4. Dev Notepad
         else if (lowerInput == "write note") {
             ofstream outfile;
             outfile.open("notes.txt", ios_base::app);
@@ -81,7 +94,7 @@ int main()
             } else cout << "No notes found! ✨" << endl;
         }
 
-        // 4. Motivation
+        // 5. Motivation
         else if (lowerInput == "motivation") {
             string quotes[] = {
                 "Karthikeyan, the stage at Tesla 2035 is waiting for you! 🏎️",
@@ -93,7 +106,7 @@ int main()
             cout << "Assistant: " << quotes[rand() % 4] << endl;
         }
 
-        // 5. Special Day Reminder
+        // 6. Special Day Reminder
         else if (lowerInput == "add event") {
             string date, eventName;
             cout << "Assistant: Enter the date to remember (DD/MM): ";
@@ -106,7 +119,7 @@ int main()
             eventFile.open("events.txt", ios_base::app);
             eventFile << date << " " << eventName << endl;
             eventFile.close();
-            cout << "Assistant: Noted! I'll remember " << eventName << " on " << date << ". ✅" << date;
+            cout << "Assistant: Noted! I'll remember " << eventName << " on " << date << ". ✅";
         }
         else if (lowerInput == "check events" || lowerInput == "today") {
             time_t now = time(0);
@@ -130,7 +143,7 @@ int main()
             eventFile.close();
         }
 
-        // 6. Tesla Battery Core Logic
+        // 7. Tesla Battery Core Logic
         else if (lowerInput == "battery") {
             double p; cout << "Assistant: Battery %? "; cin >> p; cin.ignore();
             if (p >= 0 && p <= 100) cout << "Assistant: Estimated Range: " << p * 5 << " KM! 🚗🔋" << endl;
@@ -157,7 +170,7 @@ int main()
             }
         }
 
-        // 7. Tesla Model Fleet Customizer
+        // 8. Tesla Model Fleet Customizer
         else if (lowerInput == "model" || lowerInput == "tesla car") {
             int choice;
             cout << "\n--- Select Tesla Model ---" << endl;
@@ -180,38 +193,46 @@ int main()
             }
         }
 
-        // --- 8. NEW: Balanced Schedule Optimizer (V5.7) ---
+        // 9. Balanced Schedule Optimizer
         else if (lowerInput == "schedule" || lowerInput == "routine") {
             cout << "\n--- 🎯 Karthikeyan's Daily Balance Routine ---" << endl;
             cout << "🌅 Morning (Discipline & Fitness):" << endl;
-            cout << "   - 06:00 AM to 07:30 AM -> RSS Shakha Training (Physical & Leadership Drill)" << endl;
+            cout << "   - 06:00 AM to 07:30 AM -> RSS Shakha Training" << endl;
             cout << "💻 Afternoon/Evening (Core Engineering Goal):" << endl;
             cout << "   - 04:00 PM to 06:00 PM -> C++ Advanced Coding & Algorithm Practice" << endl;
             cout << "   - 06:00 PM to 07:00 PM -> Project Building & GitHub Commit 🟩" << endl;
-            cout << "🧠 Developer Reminder:" << endl;
-            cout << "   - RSS gives you the discipline. C++ gives you the skill. Balance is key!" << endl;
         }
 
-        // 9. Environment & Weather
+        // 10. Tesla Project Milestone Tracker
+        else if (lowerInput == "milestones" || lowerInput == "roadmap") {
+            cout << "\n--- 🏎️ TEAM TESLA 2035 PROJECT MILESTONES ---" << endl;
+            cout << "[⏳] Level 1: Core Syntax & CLI Assistant ---> (CURRENT LEVEL - 95% DONE)" << endl;
+            cout << "[🔒] Level 2: OOP & Data Structures (Vectors, Maps)" << endl;
+            cout << "[🔒] Level 3: Advanced EV Battery Simulation Logic" << endl;
+            cout << "Assistant: One more update after this and Level 1 is completely complete! 🟩🚀" << endl;
+        }
+
+        // 11. Environment & Weather
         else if (lowerInput == "weather" || lowerInput == "climate") {
-            cout << "Assistant: Opening the local weather report for Chennai... ☀️" << endl;
+            cout << "Assistant: Checking Chennai weather for you... ☀️" << endl;
             system("am start -a android.intent.action.VIEW -d \"https://www.google.com/search?q=weather+chennai\"");
         }
         else if (lowerInput == "hydrate" || lowerInput == "health") {
-            cout << "Assistant: Karthikeyan, drink some water to keep your brain fueled up! 💧" << endl;
+            cout << "Assistant: Keep coding, but grab a glass of water first, Karthikeyan! 💧" << endl;
         }
 
-        // 10. Status & Profile Links
+        // 12. Status & Profile Links
         else if (lowerInput == "status") {
-            cout << "V5.7 | Dev: Karthikeyan | Routine: Balanced | Goal: Tesla Engineer 2035 🏎️" << endl;
+            cout << "V5.9 | Dev: Karthikeyan | Workspace: Optimized | Goal: Tesla Engineer 2035 🏎️" << endl;
         }
         else if (lowerInput == "github" || lowerInput == "git") {
             system("am start -a android.intent.action.VIEW -d https://github.com/rushsvanth-cmyk");
         }
         else {
-            cout << "Assistant: Sorry, I didn't get that. Try 'status', 'schedule', or 'model'!" << endl;
+            cout << "Assistant: Command not recognized. Try 'status', 'clear', or 'milestones'!" << endl;
         }
     } 
     return 0; 
 }
+
 
