@@ -6,13 +6,13 @@
 #include <sstream> 
 #include <unistd.h> 
 #include <fstream> 
+#include <vector> // NEW: Required for dynamic arrays!
 
 using namespace std;
 
-// Quick helper function to draw the system banner
 void displayBanner() {
-    cout << "--- System Online (V5.9 - Terminal Optimizer) ---" << endl;
-    cout << "(Commands: hi, status, battery, charge, model, schedule, milestones, clear, weather, exit)" << endl;
+    cout << "--- System Online (V6.0 - STL Data Core) ---" << endl;
+    cout << "(Commands: hi, status, battery, charge, model, add task, view task, schedule, milestones, clear, exit)" << endl;
 }
 
 int main() 
@@ -21,8 +21,8 @@ int main()
     double num1, num2;
     char op;
 
-    static string tasks[5]; 
-    static int taskCount = 0;
+    // Level 2 Upgrade: Dynamic array that expands automatically
+    vector<string> todoList; 
 
     displayBanner();
 
@@ -66,15 +66,33 @@ int main()
             cout << "Assistant: Hello creator! Ready to build the future today?" << endl;
         }
         
-        // --- 3. NEW: Clear Screen Logic (V5.9) ---
+        // 3. Clear Screen Logic
         else if (lowerInput == "clear" || lowerInput == "cls") {
-            // ANSI escape code to clear terminal screen and home the cursor
             cout << "\033[2J\033[1;1H"; 
             displayBanner();
             continue;
         }
 
-        // 4. Dev Notepad
+        // --- 4. NEW: Dynamic STL Task Management (V6.0) ---
+        else if (lowerInput == "add task") {
+            string newTask;
+            cout << "Assistant: What task are we tackling next, Karthikeyan?: ";
+            getline(cin, newTask);
+            todoList.push_back(newTask); // Dynamically adds item to vector memory
+            cout << "Assistant: Added to live stack! Total active tasks: " << todoList.size() << " 🚀" << endl;
+        }
+        else if (lowerInput == "view task" || lowerInput == "tasks") {
+            cout << "\n--- Your Active Stack ---" << endl;
+            if (todoList.empty()) {
+                cout << "No active tasks! You are clear to focus on C++ or RSS drills. ✨" << endl;
+            } else {
+                for (size_t i = 0; i < todoList.size(); ++i) {
+                    cout << i + 1 << ". " << todoList[i] << endl;
+                }
+            }
+        }
+
+        // 5. Dev Notepad
         else if (lowerInput == "write note") {
             ofstream outfile;
             outfile.open("notes.txt", ios_base::app);
@@ -94,7 +112,7 @@ int main()
             } else cout << "No notes found! ✨" << endl;
         }
 
-        // 5. Motivation
+        // 6. Motivation
         else if (lowerInput == "motivation") {
             string quotes[] = {
                 "Karthikeyan, the stage at Tesla 2035 is waiting for you! 🏎️",
@@ -106,7 +124,7 @@ int main()
             cout << "Assistant: " << quotes[rand() % 4] << endl;
         }
 
-        // 6. Special Day Reminder
+        // 7. Special Day Reminder
         else if (lowerInput == "add event") {
             string date, eventName;
             cout << "Assistant: Enter the date to remember (DD/MM): ";
@@ -115,23 +133,16 @@ int main()
             cin.ignore();
             getline(cin, eventName);
             
-            ofstream eventFile;
-            eventFile.open("events.txt", ios_base::app);
+            ofstream eventFile("events.txt", ios_base::app);
             eventFile << date << " " << eventName << endl;
             eventFile.close();
             cout << "Assistant: Noted! I'll remember " << eventName << " on " << date << ". ✅";
         }
-        else if (lowerInput == "check events" || lowerInput == "today") {
-            time_t now = time(0);
-            tm *ltm = localtime(&now);
-            char curDate[6];
-            strftime(curDate, sizeof(curDate), "%d/%m", ltm); 
-
+        else if (lowerInput == "today") {
+            time_t now = time(0); tm *ltm = localtime(&now);
+            char curDate[6]; strftime(curDate, sizeof(curDate), "%d/%m", ltm); 
             ifstream eventFile("events.txt");
-            string fileDate, fileEvent;
-            bool found = false;
-
-            cout << "Assistant: Checking your schedule..." << endl;
+            string fileDate, fileEvent; bool found = false;
             while (eventFile >> fileDate) {
                 getline(eventFile, fileEvent);
                 if (fileDate == string(curDate)) {
@@ -139,100 +150,64 @@ int main()
                     found = true;
                 }
             }
-            if (!found) cout << "Assistant: Nothing special on the calendar for today, Karthikeyan! ✨" << endl;
+            if (!found) cout << "Assistant: Nothing special on the calendar for today! ✨" << endl;
             eventFile.close();
         }
 
-        // 7. Tesla Battery Core Logic
+        // 8. Tesla Battery Core Logic
         else if (lowerInput == "battery") {
             double p; cout << "Assistant: Battery %? "; cin >> p; cin.ignore();
             if (p >= 0 && p <= 100) cout << "Assistant: Estimated Range: " << p * 5 << " KM! 🚗🔋" << endl;
-            else cout << "Assistant: Please enter a percentage between 0 and 100! ❌" << endl;
         }
         else if (lowerInput == "charge") {
-            double current_pct;
-            cout << "Assistant: Current battery percentage (0-100)?: ";
-            cin >> current_pct;
-            cin.ignore();
-            
+            double current_pct; cout << "Assistant: Current battery percentage (0-100)?: "; cin >> current_pct; cin.ignore();
             if (current_pct >= 0 && current_pct < 100) {
                 double needed = 100.0 - current_pct;
-                double home_rate = 0.12;       
-                double supercharger_rate = 2.0; 
-                
                 cout << "\n--- Charging Estimates to 100% ---" << endl;
-                cout << "⚡ Tesla Home Wall Connector: Approx. " << (needed / home_rate) / 60 << " hours." << endl;
-                cout << "⚡ Tesla Supercharger V3: Approx. " << needed / supercharger_rate << " minutes." << endl;
-            } else if (current_pct == 100) {
-                cout << "Assistant: Battery is already fully charged! Pack is ready to roll. 🏎️⚡" << endl;
-            } else {
-                cout << "Assistant: Invalid calculation data. ❌" << endl;
+                cout << "⚡ Tesla Home Wall Connector: Approx. " << (needed / 0.12) / 60 << " hours." << endl;
+                cout << "⚡ Tesla Supercharger V3: Approx. " << needed / 2.0 << " minutes." << endl;
             }
         }
 
-        // 8. Tesla Model Fleet Customizer
-        else if (lowerInput == "model" || lowerInput == "tesla car") {
-            int choice;
-            cout << "\n--- Select Tesla Model ---" << endl;
-            cout << "1. Model S (Plaid)\n2. Model 3 (Long Range)\n3. Model X (Plaid)\n4. Model Y (Performance)" << endl;
-            cout << "Enter choice (1-4): ";
-            cin >> choice;
-            cin.ignore();
-
-            cout << "\n--- Vehicle Performance Profile ---" << endl;
-            if (choice == 1) {
-                cout << "🚗 Model: Tesla Model S Plaid\n🔋 Est. Range: 637 KM\n⚡ 0-100 KM/H: 2.1 Seconds 🔥" << endl;
-            } else if (choice == 2) {
-                cout << "🚗 Model: Tesla Model 3 Long Range\n🔋 Est. Range: 576 KM\n⚡ 0-100 KM/H: 4.2 Seconds" << endl;
-            } else if (choice == 3) {
-                cout << "🚗 Model: Tesla Model X Plaid\n🔋 Est. Range: 536 KM\n⚡ 0-100 KM/H: 2.6 Seconds" << endl;
-            } else if (choice == 4) {
-                cout << "🚗 Model: Tesla Model Y Performance\n🔋 Est. Range: 488 KM\n⚡ 0-100 KM/H: 3.6 Seconds" << endl;
-            } else {
-                cout << "Assistant: Invalid selection! ❌" << endl;
-            }
+        // 9. Tesla Model Fleet Customizer
+        else if (lowerInput == "model") {
+            int choice; cout << "Enter Model choice (1-4): "; cin >> choice; cin.ignore();
+            if (choice == 1) cout << "🚗 Model S Plaid | 🔋 637 KM | ⚡ 0-100: 2.1s 🔥" << endl;
+            else if (choice == 2) cout << "🚗 Model 3 LR | 🔋 576 KM | ⚡ 0-100: 4.2s" << endl;
+            else if (choice == 3) cout << "🚗 Model X Plaid | 🔋 536 KM | ⚡ 0-100: 2.6s" << endl;
+            else if (choice == 4) cout << "🚗 Model Y Perf | 🔋 488 KM | ⚡ 0-100: 3.6s" << endl;
         }
 
-        // 9. Balanced Schedule Optimizer
-        else if (lowerInput == "schedule" || lowerInput == "routine") {
-            cout << "\n--- 🎯 Karthikeyan's Daily Balance Routine ---" << endl;
-            cout << "🌅 Morning (Discipline & Fitness):" << endl;
-            cout << "   - 06:00 AM to 07:30 AM -> RSS Shakha Training" << endl;
-            cout << "💻 Afternoon/Evening (Core Engineering Goal):" << endl;
-            cout << "   - 04:00 PM to 06:00 PM -> C++ Advanced Coding & Algorithm Practice" << endl;
-            cout << "   - 06:00 PM to 07:00 PM -> Project Building & GitHub Commit 🟩" << endl;
+        // 10. Balanced Schedule Optimizer
+        else if (lowerInput == "schedule") {
+            cout << "\n--- 🎯 Routine Balance ---" << endl;
+            cout << "🌅 06:00 AM - 07:30 AM -> RSS Shakha Drill" << endl;
+            cout << "💻 04:00 PM - 07:00 PM -> C++ Coding & GitHub Commits 🟩" << endl;
         }
 
-        // 10. Tesla Project Milestone Tracker
-        else if (lowerInput == "milestones" || lowerInput == "roadmap") {
-            cout << "\n--- 🏎️ TEAM TESLA 2035 PROJECT MILESTONES ---" << endl;
-            cout << "[⏳] Level 1: Core Syntax & CLI Assistant ---> (CURRENT LEVEL - 95% DONE)" << endl;
-            cout << "[🔒] Level 2: OOP & Data Structures (Vectors, Maps)" << endl;
-            cout << "[🔒] Level 3: Advanced EV Battery Simulation Logic" << endl;
-            cout << "Assistant: One more update after this and Level 1 is completely complete! 🟩🚀" << endl;
+        // 11. Tesla Project Milestone Tracker
+        else if (lowerInput == "milestones") {
+            cout << "\n--- 🏎️ PROJECT MILESTONES ---" << endl;
+            cout << "[✅] Level 1: Core Syntax & CLI Assistant ---> 100% DONE! 🎉" << endl;
+            cout << "[⏳] Level 2: OOP & STL Vectors ---> (CURRENT LEVEL - 10% DONE)" << endl;
         }
 
-        // 11. Environment & Weather
-        else if (lowerInput == "weather" || lowerInput == "climate") {
-            cout << "Assistant: Checking Chennai weather for you... ☀️" << endl;
+        // 12. Environment & Weather
+        else if (lowerInput == "weather") {
             system("am start -a android.intent.action.VIEW -d \"https://www.google.com/search?q=weather+chennai\"");
         }
-        else if (lowerInput == "hydrate" || lowerInput == "health") {
-            cout << "Assistant: Keep coding, but grab a glass of water first, Karthikeyan! 💧" << endl;
-        }
 
-        // 12. Status & Profile Links
+        // 13. Status & Profile Links
         else if (lowerInput == "status") {
-            cout << "V5.9 | Dev: Karthikeyan | Workspace: Optimized | Goal: Tesla Engineer 2035 🏎️" << endl;
+            cout << "V6.0 | Dev: Karthikeyan | Layer: STL Dynamic Vector | Target: Tesla 2035 🏎️" << endl;
         }
-        else if (lowerInput == "github" || lowerInput == "git") {
+        else if (lowerInput == "github") {
             system("am start -a android.intent.action.VIEW -d https://github.com/rushsvanth-cmyk");
         }
         else {
-            cout << "Assistant: Command not recognized. Try 'status', 'clear', or 'milestones'!" << endl;
+            cout << "Assistant: Try 'add task', 'view task', or 'status'!" << endl;
         }
     } 
     return 0; 
 }
-
 
