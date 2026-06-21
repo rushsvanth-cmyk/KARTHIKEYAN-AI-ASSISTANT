@@ -6,13 +6,13 @@
 #include <sstream> 
 #include <unistd.h> 
 #include <fstream> 
-#include <vector> // NEW: Required for dynamic arrays!
+#include <vector> 
 
 using namespace std;
 
 void displayBanner() {
-    cout << "--- System Online (V6.0 - STL Data Core) ---" << endl;
-    cout << "(Commands: hi, status, battery, charge, model, add task, view task, schedule, milestones, clear, exit)" << endl;
+    cout << "--- System Online (V6.1 - Data Stack Erasure) ---" << endl;
+    cout << "(Commands: hi, status, battery, charge, model, add task, view task, delete task, schedule, milestones, clear, exit)" << endl;
 }
 
 int main() 
@@ -21,7 +21,7 @@ int main()
     double num1, num2;
     char op;
 
-    // Level 2 Upgrade: Dynamic array that expands automatically
+    // Level 2 Core Array Stack
     vector<string> todoList; 
 
     displayBanner();
@@ -73,12 +73,12 @@ int main()
             continue;
         }
 
-        // --- 4. NEW: Dynamic STL Task Management (V6.0) ---
+        // 4. Dynamic STL Task Management
         else if (lowerInput == "add task") {
             string newTask;
             cout << "Assistant: What task are we tackling next, Karthikeyan?: ";
             getline(cin, newTask);
-            todoList.push_back(newTask); // Dynamically adds item to vector memory
+            todoList.push_back(newTask); 
             cout << "Assistant: Added to live stack! Total active tasks: " << todoList.size() << " 🚀" << endl;
         }
         else if (lowerInput == "view task" || lowerInput == "tasks") {
@@ -88,6 +88,25 @@ int main()
             } else {
                 for (size_t i = 0; i < todoList.size(); ++i) {
                     cout << i + 1 << ". " << todoList[i] << endl;
+                }
+            }
+        }
+        // --- NEW: STL Vector Erasure Utility (V6.1) ---
+        else if (lowerInput == "delete task" || lowerInput == "remove task") {
+            if (todoList.empty()) {
+                cout << "Assistant: The stack is empty! Nothing to delete. ✨" << endl;
+            } else {
+                int index;
+                cout << "Assistant: Enter task number to delete (1-" << todoList.size() << "): ";
+                cin >> index;
+                cin.ignore(); // Clean standard input buffer
+
+                if (index > 0 && index <= (int)todoList.size()) {
+                    // Vectors use iterator-based erasure: .begin() + offset
+                    todoList.erase(todoList.begin() + (index - 1));
+                    cout << "Assistant: Task removed successfully! Remaining: " << todoList.size() << " 🎯" << endl;
+                } else {
+                    cout << "Assistant: Invalid task number! Operation canceled. ❌" << endl;
                 }
             }
         }
@@ -189,7 +208,7 @@ int main()
         else if (lowerInput == "milestones") {
             cout << "\n--- 🏎️ PROJECT MILESTONES ---" << endl;
             cout << "[✅] Level 1: Core Syntax & CLI Assistant ---> 100% DONE! 🎉" << endl;
-            cout << "[⏳] Level 2: OOP & STL Vectors ---> (CURRENT LEVEL - 10% DONE)" << endl;
+            cout << "[⏳] Level 2: OOP & STL Vectors ---> (CURRENT LEVEL - 30% DONE)" << endl;
         }
 
         // 12. Environment & Weather
@@ -199,15 +218,14 @@ int main()
 
         // 13. Status & Profile Links
         else if (lowerInput == "status") {
-            cout << "V6.0 | Dev: Karthikeyan | Layer: STL Dynamic Vector | Target: Tesla 2035 🏎️" << endl;
+            cout << "V6.1 | Dev: Karthikeyan | Layer: Vector Erasure Protocol | Target: Tesla 2035 🏎️" << endl;
         }
         else if (lowerInput == "github") {
             system("am start -a android.intent.action.VIEW -d https://github.com/rushsvanth-cmyk");
         }
         else {
-            cout << "Assistant: Try 'add task', 'view task', or 'status'!" << endl;
+            cout << "Assistant: Unrecognized entry. Try 'add task', 'delete task', or 'view task'!" << endl;
         }
     } 
     return 0; 
 }
-
