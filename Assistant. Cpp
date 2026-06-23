@@ -11,8 +11,19 @@
 using namespace std;
 
 void displayBanner() {
-    cout << "--- System Online (V6.1 - Data Stack Erasure) ---" << endl;
+    cout << "--- System Online (V6.2 - File Persistence) ---" << endl;
     cout << "(Commands: hi, status, battery, charge, model, add task, view task, delete task, schedule, milestones, clear, exit)" << endl;
+}
+
+// Helper function to save tasks to file
+void saveTasksToFile(const vector<string>& list) {
+    ofstream outFile("todo.txt");
+    if (outFile.is_open()) {
+        for (const string& task : list) {
+            outFile << task << endl;
+        }
+        outFile.close();
+    }
 }
 
 int main() 
@@ -24,7 +35,22 @@ int main()
     // Level 2 Core Array Stack
     vector<string> todoList; 
 
+    // --- NEW: Load Saved Tasks on Startup (V6.2) ---
+    ifstream inFile("todo.txt");
+    string savedTask;
+    if (inFile.is_open()) {
+        while (getline(inFile, savedTask)) {
+            if (!savedTask.empty()) {
+                todoList.push_back(savedTask);
+            }
+        }
+        inFile.close();
+    }
+
     displayBanner();
+    if (!todoList.empty()) {
+        cout << "Assistant: Loaded " << todoList.size() << " pending tasks from memory! 💾" << endl;
+    }
 
     while (true)
     {
@@ -73,13 +99,14 @@ int main()
             continue;
         }
 
-        // 4. Dynamic STL Task Management
+        // 4. Dynamic STL Task Management with Persistence
         else if (lowerInput == "add task") {
             string newTask;
             cout << "Assistant: What task are we tackling next, Karthikeyan?: ";
             getline(cin, newTask);
             todoList.push_back(newTask); 
-            cout << "Assistant: Added to live stack! Total active tasks: " << todoList.size() << " 🚀" << endl;
+            saveTasksToFile(todoList); // Auto-save on addition
+            cout << "Assistant: Task saved to file! Total active tasks: " << todoList.size() << " 🚀" << endl;
         }
         else if (lowerInput == "view task" || lowerInput == "tasks") {
             cout << "\n--- Your Active Stack ---" << endl;
@@ -91,7 +118,6 @@ int main()
                 }
             }
         }
-        // --- NEW: STL Vector Erasure Utility (V6.1) ---
         else if (lowerInput == "delete task" || lowerInput == "remove task") {
             if (todoList.empty()) {
                 cout << "Assistant: The stack is empty! Nothing to delete. ✨" << endl;
@@ -99,14 +125,14 @@ int main()
                 int index;
                 cout << "Assistant: Enter task number to delete (1-" << todoList.size() << "): ";
                 cin >> index;
-                cin.ignore(); // Clean standard input buffer
+                cin.ignore(); 
 
                 if (index > 0 && index <= (int)todoList.size()) {
-                    // Vectors use iterator-based erasure: .begin() + offset
                     todoList.erase(todoList.begin() + (index - 1));
-                    cout << "Assistant: Task removed successfully! Remaining: " << todoList.size() << " 🎯" << endl;
+                    saveTasksToFile(todoList); // Auto-save after deletion
+                    cout << "Assistant: Task removed from memory and file! Remaining: " << todoList.size() << " 🎯" << endl;
                 } else {
-                    cout << "Assistant: Invalid task number! Operation canceled. ❌" << endl;
+                    cout << "Assistant: Invalid task number! ❌" << endl;
                 }
             }
         }
@@ -155,7 +181,7 @@ int main()
             ofstream eventFile("events.txt", ios_base::app);
             eventFile << date << " " << eventName << endl;
             eventFile.close();
-            cout << "Assistant: Noted! I'll remember " << eventName << " on " << date << ". ✅";
+            cout << "Assistant: Noted! ✅";
         }
         else if (lowerInput == "today") {
             time_t now = time(0); tm *ltm = localtime(&now);
@@ -208,7 +234,7 @@ int main()
         else if (lowerInput == "milestones") {
             cout << "\n--- 🏎️ PROJECT MILESTONES ---" << endl;
             cout << "[✅] Level 1: Core Syntax & CLI Assistant ---> 100% DONE! 🎉" << endl;
-            cout << "[⏳] Level 2: OOP & STL Vectors ---> (CURRENT LEVEL - 30% DONE)" << endl;
+            cout << "[⏳] Level 2: OOP & STL Vectors ---> (CURRENT LEVEL - 50% DONE)" << endl;
         }
 
         // 12. Environment & Weather
@@ -218,7 +244,7 @@ int main()
 
         // 13. Status & Profile Links
         else if (lowerInput == "status") {
-            cout << "V6.1 | Dev: Karthikeyan | Layer: Vector Erasure Protocol | Target: Tesla 2035 🏎️" << endl;
+            cout << "V6.2 | Dev: Karthikeyan | Layer: File Persistence Core | Target: Tesla 2035 🏎️" << endl;
         }
         else if (lowerInput == "github") {
             system("am start -a android.intent.action.VIEW -d https://github.com/rushsvanth-cmyk");
