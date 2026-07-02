@@ -14,8 +14,8 @@ using namespace std;
 const auto startTime = chrono::steady_clock::now();
 
 void displayBanner() {
-    cout << "--- System Online (V7.1 - EV Charging Optimizer) ---" << endl;
-    cout << "(Commands: hi, status, runtime, simulate ev, optimize charge, battery, charge, model, add task, view task, delete task, schedule, milestones, clear, exit)" << endl;
+    cout << "--- System Online (V7.2 - Regenerative Brake Sim) ---" << endl;
+    cout << "(Commands: hi, status, runtime, simulate ev, optimize charge, simulate regen, battery, charge, model, add task, view task, delete task, schedule, milestones, clear, exit)" << endl;
 }
 
 void saveTasksToFile(const vector<string>& list) {
@@ -115,65 +115,77 @@ int main()
             cout << "⚡ Estimated Range: " << realWorldRange << " KM" << endl;
         }
 
-        // --- 4. NEW: Tesla Supercharger Curve Optimizer (V7.1) ---
+        // 4. Tesla Supercharger Curve Optimizer
         else if (lowerInput == "optimize charge" || lowerInput == "charging curve") {
             double currentSoc;
             cout << "\n--- ⚡ Tesla Supercharger V3 Curve Modeling ---" << endl;
-            cout << "Enter current battery percentage (0-99): ";
-            cin >> currentSoc;
-            cin.ignore();
+            cout << "Enter current battery percentage (0-99): "; cin >> currentSoc; cin.ignore();
 
             if (currentSoc >= 0 && currentSoc < 100) {
-                double fastPhaseTime = 0;
-                double slowPhaseTime = 0;
-
-                // Phase 1: Rapid Charging up to 80% (Avg rate: 2.5% per minute)
+                double fastPhaseTime = 0, slowPhaseTime = 0;
                 if (currentSoc < 80.0) {
                     fastPhaseTime = (80.0 - currentSoc) / 2.5;
-                    // Phase 2: From 80% to 100%, the speed drops heavily due to high resistance (Avg rate: 0.8% per minute)
                     slowPhaseTime = 20.0 / 0.8; 
                 } else {
-                    // Already above 80%, only compute remaining slow taper phase
-                    fastPhaseTime = 0;
                     slowPhaseTime = (100.0 - currentSoc) / 0.8;
                 }
-
-                cout << "\n--- Optimized Charging Profile ---" << endl;
-                if (fastPhaseTime > 0) {
-                    cout << "🚀 Bulk Phase (Current -> 80%): Approx. " << fastPhaseTime << " mins [Peak kW Mode]" << endl;
-                }
-                cout << "🐢 Taper Phase (80% -> 100%): Approx. " << slowPhaseTime << " mins [Thermal Protection Mode]" << endl;
+                cout << "\n🚀 Bulk Phase: " << fastPhaseTime << " mins | 🐢 Taper Phase: " << slowPhaseTime << " mins" << endl;
                 cout << "🏁 Total Session Time to Full: " << fastPhaseTime + slowPhaseTime << " minutes." << endl;
-                cout << "💡 Pro Tip: Unplug at 80% to maximize road trip efficiency!" << endl;
-            } else {
-                cout << "Assistant: Invalid percentage for optimization loop. ❌" << endl;
             }
         }
 
-        // 5. Runtime Performance Utility
+        // --- 5. NEW: Tesla Regenerative Braking Simulator (V7.2) ---
+        else if (lowerInput == "simulate regen" || lowerInput == "regen") {
+            double initialSpeed, finalSpeed, duration;
+            const double TESLA_MASS = 2108.0;       // Model S curb weight in kg
+            const double REGEN_EFFICIENCY = 0.75;    // 75% kinetic-to-electric capture rating
+            const double WH_PER_JOULE = 1.0 / 3600.0; // Conversion factor
+
+            cout << "\n--- 🔄 Tesla Kinetic Energy Recovery System (KERS) ---" << endl;
+            cout << "Enter Initial Speed (in km/h): "; cin >> initialSpeed;
+            cout << "Enter Target Lower Speed (in km/h): "; cin >> finalSpeed;
+            cout << "Enter Deceleration Duration (in seconds): "; cin >> duration;
+            cin.ignore();
+
+            if (initialSpeed > finalSpeed && finalSpeed >= 0 && duration > 0) {
+                // Convert speeds from km/h to m/s for physics metrics
+                double v_i = initialSpeed / 3.6;
+                double v_f = finalSpeed / 3.6;
+
+                // Calculate loss in kinetic energy: KE = 0.5 * m * (v_i^2 - v_f^2)
+                double kineticEnergyJoles = 0.5 * TESLA_MASS * ((v_i * v_i) - (v_f * v_f));
+                double recoveredWh = kineticEnergyJoles * WH_PER_JOULE * REGEN_EFFICIENCY;
+                
+                // Assuming standard Tesla consumption profile of 150 Wh/KM (or 0.15 Wh/meter)
+                double addedMeters = recoveredWh / 0.15;
+
+                cout << "\n--- Recovery Metrics Saved ---" << endl;
+                cout << "📉 Kinetic Energy Spent: " << kineticEnergyJoles / 1000.0 << " kJ" << endl;
+                cout << "🔋 Pack Energy Recovered: " << recoveredWh << " Wh ⚡" << endl;
+                cout << "🛣️ Free Range Added: " << addedMeters << " meters (" << addedMeters / 1000.0 << " KM)" << endl;
+            } else {
+                cout << "Assistant: Invalid physics values. Initial speed must exceed target speed! ❌" << endl;
+            }
+        }
+
+        // 6. Runtime Performance Utility
         else if (lowerInput == "runtime" || lowerInput == "uptime") {
             auto currentTime = chrono::steady_clock::now();
             auto totalSeconds = chrono::duration_cast<chrono::seconds>(currentTime - startTime).count();
-            long hours = totalSeconds / 3600;
-            long minutes = (totalSeconds % 3600) / 60;
-            long seconds = totalSeconds % 60;
+            long hours = totalSeconds / 3600; long minutes = (totalSeconds % 3600) / 60; long seconds = totalSeconds % 60;
             cout << "\nSystem Core Uptime: " << hours << "h " << minutes << "m " << seconds << "s" << endl;
         }
 
-        // 6. Clear Screen Logic
+        // 7. Clear Screen Logic
         else if (lowerInput == "clear" || lowerInput == "cls") {
-            cout << "\033[2J\033[1;1H"; 
-            displayBanner();
-            continue;
+            cout << "\033[2J\033[1;1H"; displayBanner(); continue;
         }
 
-        // 7. Dynamic STL Task Management
+        // 8. Dynamic STL Task Management
         else if (lowerInput == "add task") {
             string newTask;
-            cout << "Assistant: What task are we tackling next, Karthikeyan?: ";
-            getline(cin, newTask);
-            todoList.push_back(newTask); 
-            saveTasksToFile(todoList); 
+            cout << "Assistant: What task are we tackling next, Karthikeyan?: "; getline(cin, newTask);
+            todoList.push_back(newTask); saveTasksToFile(todoList); 
             cout << "Assistant: Task saved! Total active tasks: " << todoList.size() << " 🚀" << endl;
         }
         else if (lowerInput == "view task" || lowerInput == "tasks") {
@@ -188,18 +200,16 @@ int main()
             else {
                 int index; cout << "Assistant: Enter task number to delete: "; cin >> index; cin.ignore(); 
                 if (index > 0 && index <= (int)todoList.size()) {
-                    todoList.erase(todoList.begin() + (index - 1));
-                    saveTasksToFile(todoList); 
+                    todoList.erase(todoList.begin() + (index - 1)); saveTasksToFile(todoList); 
                     cout << "Assistant: Task removed! Remaining: " << todoList.size() << " 🎯" << endl;
                 }
             }
         }
 
-        // 8. Dev Notepad
+        // 9. Dev Notepad
         else if (lowerInput == "write note") {
             ofstream outfile("notes.txt", ios_base::app);
-            cout << "Assistant: What should I write down?: ";
-            string note; getline(cin, note);
+            cout << "Assistant: What should I write down?: "; string note; getline(cin, note);
             outfile << note << endl; outfile.close();
             cout << "Assistant: Note saved to memory! 📝" << endl;
         }
@@ -212,7 +222,7 @@ int main()
             }
         }
 
-        // 9. Motivation
+        // 10. Motivation
         else if (lowerInput == "motivation") {
             string quotes[] = {
                 "Karthikeyan, the stage at Tesla 2035 is waiting for you! 🏎️",
@@ -221,7 +231,7 @@ int main()
             srand(time(0)); cout << "Assistant: " << quotes[rand() % 2] << endl;
         }
 
-        // 10. Special Day Reminder
+        // 11. Special Day Reminder
         else if (lowerInput == "add event") {
             string date, eventName;
             cout << "Assistant: Enter the date (DD/MM): "; cin >> date;
@@ -243,7 +253,7 @@ int main()
             eventFile.close();
         }
 
-        // 11. Legacy Tesla Battery Logic
+        // 12. Legacy Tesla Battery Logic
         else if (lowerInput == "battery") {
             double p; cout << "Assistant: Battery %? "; cin >> p; cin.ignore();
             if (p >= 0 && p <= 100) cout << "Assistant: Estimated Range: " << p * 5 << " KM! 🚗🔋" << endl;
@@ -256,45 +266,46 @@ int main()
             }
         }
 
-        // 12. Tesla Model Fleet Customizer
+        // 13. Tesla Model Fleet Customizer
         else if (lowerInput == "model") {
             int choice; cout << "Enter Model choice (1-4): "; cin >> choice; cin.ignore();
             if (choice == 1) cout << "🚗 Model S Plaid | 🔋 637 KM | ⚡ 0-100: 2.1s 🔥" << endl;
             else if (choice == 2) cout << "🚗 Model 3 LR | 🔋 576 KM | ⚡ 0-100: 4.2s" << endl;
         }
 
-        // 13. Balanced Schedule Optimizer
+        // 14. Balanced Schedule Optimizer
         else if (lowerInput == "schedule") {
             cout << "\n--- 🎯 Routine Balance ---" << endl;
             cout << "🌅 06:00 AM - 07:30 AM -> RSS Shakha Drill" << endl;
             cout << "💻 04:00 PM - 07:00 PM -> C++ Coding & GitHub Commits 🟩" << endl;
         }
 
-        // 14. Tesla Project Milestone Tracker
+        // 15. Tesla Project Milestone Tracker
         else if (lowerInput == "milestones") {
             cout << "\n--- 🏎️ PROJECT MILESTONES ---" << endl;
             cout << "[✅] Level 1: Core Syntax & CLI Assistant ---> 100% DONE! 🎉" << endl;
             cout << "[✅] Level 2: OOP & STL Vectors ---> 100% DONE! 🎉" << endl;
-            cout << "[⏳] Level 3: Advanced EV Battery Simulation Logic ---> (CURRENT LEVEL - 40% DONE)" << endl;
+            cout << "[⏳] Level 3: Advanced EV Battery Simulation Logic ---> (CURRENT LEVEL - 60% DONE)" << endl;
         }
 
-        // 15. Environment & Weather
+        // 16. Environment & Weather
         else if (lowerInput == "weather") {
             system("am start -a android.intent.action.VIEW -d \"https://www.google.com/search?q=weather+chennai\"");
         }
 
-        // 16. Status & Profile Links
+        // 17. Status & Profile Links
         else if (lowerInput == "status") {
-            cout << "V7.1 | Dev: Karthikeyan | Layer: Charging Optimizer | Target: Tesla 2035 🏎️" << endl;
+            cout << "V7.2 | Dev: Karthikeyan | Layer: KERS Recovery Loop | Target: Tesla 2035 🏎️" << endl;
         }
         else if (lowerInput == "github") {
             system("am start -a android.intent.action.VIEW -d https://github.com/rushsvanth-cmyk");
         }
         else {
-            cout << "Assistant: Unrecognized entry. Try 'optimize charge', 'simulate ev', or 'status'!" << endl;
+            cout << "Assistant: Unrecognized entry. Try 'simulate regen', 'simulate ev', or 'status'!" << endl;
         }
     } 
     return 0; 
 }
+
 
 
