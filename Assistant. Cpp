@@ -13,17 +13,103 @@ using namespace std;
 
 const auto startTime = chrono::steady_clock::now();
 
+// ============================================================================
+// LEVEL 4 CORE: TESLA BATTERY SYSTEM WITH CLASS CONSTRUCTORS
+// ============================================================================
+class TeslaBatterySystem {
+private:
+    const double baseRange;  // Explicitly set by Constructor
+    const double teslaMass;  // Explicitly set by Constructor
+
+public:
+    // --- NEW: Parameterized Constructor with Member Initialization List ---
+    TeslaBatterySystem(double maxRange, double weight) : baseRange(maxRange), teslaMass(weight) {
+        cout << "[BMS Initialize]: Battery Pack Hardware Configured." << endl;
+        cout << " -> Dynamic Base Range Cap: " << baseRange << " KM" << endl;
+        cout << " -> Vehicle Curb Mass Profile: " << teslaMass << " kg" << endl;
+    }
+
+    // 1. Core State of Health & Dynamic Range Analysis
+    void simulateEvRange(double soc, double mileage, double temp) {
+        double soh = 1.0 - (mileage / 250000.0);
+        if (soh < 0.70) soh = 0.70; 
+
+        double tempFactor = 1.0;
+        if (temp < 15.0) tempFactor = 1.0 - (15.0 - temp) * 0.015; 
+        else if (temp > 35.0) tempFactor = 1.0 - (temp - 35.0) * 0.008; 
+        if (tempFactor < 0.50) tempFactor = 0.50;
+
+        double realWorldRange = baseRange * (soc / 100.0) * soh * tempFactor;
+        
+        cout << "\n🔋 Battery SoH: " << soh * 100.0 << "% | 🌡️ Thermal Efficiency: " << tempFactor * 100.0 << "%" << endl;
+        cout << "⚡ Estimated Range: " << realWorldRange << " KM" << endl;
+    }
+
+    // 2. Supercharger Fast Charge Curve Optimizer
+    void optimizeChargingCurve(double currentSoc) {
+        if (currentSoc < 0 || currentSoc >= 100) {
+            cout << "Assistant: Invalid SoC percentage loop. ❌" << endl;
+            return;
+        }
+        double fastPhaseTime = 0, slowPhaseTime = 0;
+        if (currentSoc < 80.0) {
+            fastPhaseTime = (80.0 - currentSoc) / 2.5;
+            slowPhaseTime = 20.0 / 0.8; 
+        } else {
+            slowPhaseTime = (100.0 - currentSoc) / 0.8;
+        }
+        cout << "\n🚀 Bulk Phase (Current -> 80%): Approx. " << fastPhaseTime << " mins" << endl;
+        cout << "🐢 Taper Phase (80% -> 100%): Approx. " << slowPhaseTime << " mins" << endl;
+        cout << "🏁 Total Session Time to Full: " << fastPhaseTime + slowPhaseTime << " minutes." << endl;
+    }
+
+    // 3. Kinetic Energy Recovery (KERS) Monitor
+    void simulateRegenBraking(double initialSpeed, double finalSpeed, double duration) {
+        if (initialSpeed <= finalSpeed || finalSpeed < 0 || duration <= 0) {
+            cout << "Assistant: Invalid physics values. Initial speed must exceed target speed! ❌" << endl;
+            return;
+        }
+        double v_i = initialSpeed / 3.6;
+        double v_f = finalSpeed / 3.6;
+        double kineticEnergyJoules = 0.5 * teslaMass * ((v_i * v_i) - (v_f * v_f));
+        double recoveredWh = kineticEnergyJoules * (1.0 / 3600.0) * 0.75;
+        double addedMeters = recoveredWh / 0.15;
+
+        cout << "\n🔋 Pack Energy Recovered: " << recoveredWh << " Wh ⚡" << endl;
+        cout << "🛣️ Free Range Added: " << addedMeters / 1000.0 << " KM" << endl;
+    }
+
+    // 4. Fluid Loop Thermal Control System
+    void handleThermalOverride(double cellTemp) {
+        cout << "\n--- HVAC Fluid Dynamics System Deployment ---" << endl;
+        if (cellTemp >= 20.0 && cellTemp <= 35.0) {
+            cout << "✅ Status: OPTIMAL. Fluid loops bypassing radiator. Power Draw: 0.0 kW" << endl;
+        } 
+        else if (cellTemp < 20.0) {
+            double deficit = 20.0 - cellTemp;
+            double heatPower = min(deficit * 0.45, 6.0);
+            cout << "❄️ Status: CELL UNDER-TEMPERATURE. Activating Powertrain Heat Pump." << endl;
+            cout << "⚡ Heating Power Consumption: " << heatPower << " kW" << endl;
+        } 
+        else {
+            double surplus = cellTemp - 35.0;
+            double coolPower = min(surplus * 0.65, 10.0);
+            cout << "🔥 Status: CELL OVER-TEMPERATURE. Activating Chiller Refrigeration." << endl;
+            cout << "⚡ Cooling Power Consumption: " << coolPower << " kW" << endl;
+            if (cellTemp > 55.0) cout << "⚠️ WARNING: Thermal runaway mitigation threshold active!" << endl;
+        }
+    }
+};
+
 void displayBanner() {
-    cout << "--- System Online (V7.3 - Thermal Management Core) ---" << endl;
-    cout << "(Commands: hi, status, runtime, simulate ev, optimize charge, simulate regen, thermal override, battery, charge, model, add task, view task, delete task, schedule, milestones, clear, exit)" << endl;
+    cout << "--- System Online (V8.1 - OOP Constructors) ---" << endl;
+    cout << "(Commands: hi, status, runtime, simulate ev, optimize charge, simulate regen, thermal override, battery, add task, view task, delete task, schedule, milestones, clear, exit)" << endl;
 }
 
 void saveTasksToFile(const vector<string>& list) {
     ofstream outFile("todo.txt");
     if (outFile.is_open()) {
-        for (const string& task : list) {
-            outFile << task << endl;
-        }
+        for (const string& task : list) outFile << task << endl;
         outFile.close();
     }
 }
@@ -35,23 +121,22 @@ int main()
     char op;
 
     vector<string> todoList; 
+    
+    // --- NEW: Creating the Object with targeted initialization values ---
+    // Instantiating standard Model S Specifications (540 KM baseline range, 2108 kg)
+    TeslaBatterySystem evSystem(540.0, 2108.0);
 
     // Load saved tasks on startup
     ifstream inFile("todo.txt");
     string savedTask;
     if (inFile.is_open()) {
         while (getline(inFile, savedTask)) {
-            if (!savedTask.empty()) {
-                todoList.push_back(savedTask);
-            }
+            if (!savedTask.empty()) todoList.push_back(savedTask);
         }
         inFile.close();
     }
 
     displayBanner();
-    if (!todoList.empty()) {
-        cout << "Assistant: Loaded " << todoList.size() << " pending tasks from memory! 💾" << endl;
-    }
 
     while (true)
     {
@@ -62,9 +147,8 @@ int main()
         string lowerInput = input;
         transform(lowerInput.begin(), lowerInput.end(), lowerInput.begin(), [](unsigned char c){ return tolower(c); });
 
-        // 1. Automatic Math Detection
-        if (isdigit(input[0])) 
-        {
+        // 1. Math Intercept
+        if (isdigit(input[0])) {
             stringstream ss(input);
             if (ss >> num1 >> op >> num2) {
                 cout << "Assistant (Math): ";
@@ -72,18 +156,14 @@ int main()
                     case '+': cout << num1 + num2 << " ✅"; break;
                     case '-': cout << num1 - num2 << " ✅"; break;
                     case '*': cout << num1 * num2 << " ✅"; break;
-                    case '/': 
-                        if(num2 != 0) cout << num1 / num2 << " ✅";
-                        else cout << "Error! Cannot divide by zero. ❌";
-                        break;
-                    case '^': cout << pow(num1, num2) << " 🔥"; break;
-                    default: cout << "Unknown operator! 😅";
+                    case '/': cout << (num2 != 0 ? to_string(num1 / num2) : "Error! ❌"); break;
+                    default: cout << "Unknown operator!";
                 }
                 cout << endl; continue; 
             }
         }
 
-        // 2. System Commands
+        // 2. Base System Infrastructure
         if (lowerInput == "exit" || lowerInput == "quit") {
             cout << "Assistant: Goodbye Karthikeyan! Heading to Tesla HQ... 🏎️🫂" << endl;
             break;
@@ -91,245 +171,79 @@ int main()
         else if (lowerInput == "hi" || lowerInput == "hello") {
             cout << "Assistant: Hello creator! Ready to build the future today?" << endl;
         }
-        
-        // 3. Tesla Advanced EV Battery Simulation
-        else if (lowerInput == "simulate ev" || lowerInput == "ev physics") {
-            double baseRange = 500.0; 
-            double mileage, temp, soc;
-            cout << "\n--- Tesla Dynamic Range Diagnostics ---" << endl;
-            cout << "Enter Current Battery % (SoC 0-100): "; cin >> soc;
-            cout << "Enter Total Vehicle Mileage (in KM): "; cin >> mileage;
-            cout << "Enter Battery Ambient Temperature (°C): "; cin >> temp;
-            cin.ignore();
-
-            double soh = 1.0 - (mileage / 250000.0);
-            if (soh < 0.70) soh = 0.70; 
-
-            double tempFactor = 1.0;
-            if (temp < 15.0) tempFactor = 1.0 - (15.0 - temp) * 0.015; 
-            else if (temp > 35.0) tempFactor = 1.0 - (temp - 35.0) * 0.008; 
-            if (tempFactor < 0.50) tempFactor = 0.50;
-
-            double realWorldRange = baseRange * (soc / 100.0) * soh * tempFactor;
-            cout << "\n🔋 Battery SoH: " << soh * 100.0 << "% | 🌡️ Thermal Efficiency: " << tempFactor * 100.0 << "%" << endl;
-            cout << "⚡ Estimated Range: " << realWorldRange << " KM" << endl;
-        }
-
-        // 4. Tesla Supercharger Curve Optimizer
-        else if (lowerInput == "optimize charge" || lowerInput == "charging curve") {
-            double currentSoc;
-            cout << "\n--- ⚡ Tesla Supercharger V3 Curve Modeling ---" << endl;
-            cout << "Enter current battery percentage (0-99): "; cin >> currentSoc; cin.ignore();
-
-            if (currentSoc >= 0 && currentSoc < 100) {
-                double fastPhaseTime = 0, slowPhaseTime = 0;
-                if (currentSoc < 80.0) {
-                    fastPhaseTime = (80.0 - currentSoc) / 2.5;
-                    slowPhaseTime = 20.0 / 0.8; 
-                } else {
-                    slowPhaseTime = (100.0 - currentSoc) / 0.8;
-                }
-                cout << "\n🚀 Bulk Phase: " << fastPhaseTime << " mins | 🐢 Taper Phase: " << slowPhaseTime << " mins" << endl;
-                cout << "🏁 Total Session Time to Full: " << fastPhaseTime + slowPhaseTime << " minutes." << endl;
-            }
-        }
-
-        // 5. Tesla Regenerative Braking Simulator
-        else if (lowerInput == "simulate regen" || lowerInput == "regen") {
-            double initialSpeed, finalSpeed, duration;
-            const double TESLA_MASS = 2108.0;       
-            const double REGEN_EFFICIENCY = 0.75;    
-            const double WH_PER_JOULE = 1.0 / 3600.0; 
-
-            cout << "\n--- 🔄 Tesla Kinetic Energy Recovery System (KERS) ---" << endl;
-            cout << "Enter Initial Speed (in km/h): "; cin >> initialSpeed;
-            cout << "Enter Target Lower Speed (in km/h): "; cin >> finalSpeed;
-            cout << "Enter Deceleration Duration (in seconds): "; cin >> duration;
-            cin.ignore();
-
-            if (initialSpeed > finalSpeed && finalSpeed >= 0 && duration > 0) {
-                double v_i = initialSpeed / 3.6;
-                double v_f = finalSpeed / 3.6;
-                double kineticEnergyJoles = 0.5 * TESLA_MASS * ((v_i * v_i) - (v_f * v_f));
-                double recoveredWh = kineticEnergyJoles * WH_PER_JOULE * REGEN_EFFICIENCY;
-                double addedMeters = recoveredWh / 0.15;
-
-                cout << "\n🔋 Pack Energy Recovered: " << recoveredWh << " Wh ⚡" << endl;
-                cout << "🛣️ Free Range Added: " << addedMeters / 1000.0 << " KM" << endl;
-            }
-        }
-
-        // --- 6. NEW: Tesla Thermal Management Override (V7.3) ---
-        else if (lowerInput == "thermal override" || lowerInput == "hvac") {
-            double cellTemp;
-            cout << "\n--- 🌡️ Tesla Octovalve Thermal Loop Status ---" << endl;
-            cout << "Enter Current Battery Cell Temperature (°C): ";
-            cin >> cellTemp;
-            cin.ignore();
-
-            cout << "\n--- HVAC Fluid Dynamics System Deployment ---" << endl;
-            if (cellTemp >= 20.0 && cellTemp <= 35.0) {
-                cout << "✅ Status: OPTIMAL. Fluid loops bypassing radiator. Power Draw: 0.0 kW" << endl;
-            } 
-            else if (cellTemp < 20.0) {
-                // Cold scenario: Activate internal heat pump / stator waste heat
-                double deficit = 20.0 - cellTemp;
-                double heatPower = deficit * 0.45; // 0.45 kW required per degree deficit
-                if (heatPower > 6.0) heatPower = 6.0; // Max out heat pump capacity
-                
-                cout << "❄️ Status: CELL UNDER-TEMPERATURE. Activating Powertrain Heat Pump." << endl;
-                cout << "⚡ Heating Loop Target: 22.0°C | Active Power Consumption: " << heatPower << " kW" << endl;
-            } 
-            else {
-                // Hot scenario: Activate refrigeration chillers
-                double surplus = cellTemp - 35.0;
-                double coolPower = surplus * 0.65; // 0.65 kW required per degree surplus
-                if (coolPower > 10.0) coolPower = 10.0; // Max compressor dissipation
-                
-                cout << "🔥 Status: CELL OVER-TEMPERATURE. Activating Chiller Refrigeration." << endl;
-                cout << "⚡ Cooling Loop Target: 30.0°C | Active Power Consumption: " << coolPower << " kW" << endl;
-                if (cellTemp > 55.0) {
-                    cout << "⚠️ WARNING: Thermal runaway mitigation threshold met! Supercharging throttled." << endl;
-                }
-            }
-        }
-
-        // 7. Runtime Performance Utility
-        else if (lowerInput == "runtime" || lowerInput == "uptime") {
-            auto currentTime = chrono::steady_clock::now();
-            auto totalSeconds = chrono::duration_cast<chrono::seconds>(currentTime - startTime).count();
-            long hours = totalSeconds / 3600; long minutes = (totalSeconds % 3600) / 60; long seconds = totalSeconds % 60;
-            cout << "\nSystem Core Uptime: " << hours << "h " << minutes << "m " << seconds << "s" << endl;
-        }
-
-        // 8. Clear Screen Logic
         else if (lowerInput == "clear" || lowerInput == "cls") {
             cout << "\033[2J\033[1;1H"; displayBanner(); continue;
         }
 
-        // 9. Dynamic STL Task Management
+        // 3. Class Object Interaction Passes
+        else if (lowerInput == "simulate ev" || lowerInput == "ev physics") {
+            double soc, mileage, temp;
+            cout << "Enter Battery % (SoC): "; cin >> soc;
+            cout << "Enter Total Mileage (KM): "; cin >> mileage;
+            cout << "Enter Ambient Temp (°C): "; cin >> temp; cin.ignore();
+            evSystem.simulateEvRange(soc, mileage, temp);
+        }
+        else if (lowerInput == "optimize charge" || lowerInput == "charging curve") {
+            double currentSoc;
+            cout << "Enter current SoC (0-99): "; cin >> currentSoc; cin.ignore();
+            evSystem.optimizeChargingCurve(currentSoc);
+        }
+        else if (lowerInput == "simulate regen" || lowerInput == "regen") {
+            double initialSpeed, finalSpeed, duration;
+            cout << "Enter Initial Speed (km/h): "; cin >> initialSpeed;
+            cout << "Enter Target Speed (km/h): "; cin >> finalSpeed;
+            cout << "Enter Duration (seconds): "; cin >> duration; cin.ignore();
+            evSystem.simulateRegenBraking(initialSpeed, finalSpeed, duration);
+        }
+        else if (lowerInput == "thermal override" || lowerInput == "hvac") {
+            double cellTemp;
+            cout << "Enter Battery Cell Temperature (°C): "; cin >> cellTemp; cin.ignore();
+            evSystem.handleThermalOverride(cellTemp);
+        }
+
+        // 4. Data Stack Controls
         else if (lowerInput == "add task") {
-            string newTask;
-            cout << "Assistant: What task are we tackling next, Karthikeyan?: "; getline(cin, newTask);
-            todoList.push_back(newTask); saveTasksToFile(todoList); 
-            cout << "Assistant: Task saved! Total active tasks: " << todoList.size() << " 🚀" << endl;
+            string newTask; cout << "Assistant: What task are we tackling next?: ";
+            getline(cin, newTask); todoList.push_back(newTask); saveTasksToFile(todoList);
+            cout << "Assistant: Saved! Total tasks: " << todoList.size() << endl;
         }
         else if (lowerInput == "view task" || lowerInput == "tasks") {
-            cout << "\n--- Your Active Stack ---" << endl;
-            if (todoList.empty()) cout << "No active tasks! ✨" << endl;
-            else {
-                for (size_t i = 0; i < todoList.size(); ++i) cout << i + 1 << ". " << todoList[i] << endl;
-            }
+            cout << "\n--- Active Stack ---" << endl;
+            if (todoList.empty()) cout << "No tasks found! ✨" << endl;
+            for (size_t i = 0; i < todoList.size(); ++i) cout << i + 1 << ". " << todoList[i] << endl;
         }
         else if (lowerInput == "delete task" || lowerInput == "remove task") {
-            if (todoList.empty()) cout << "Assistant: The stack is empty! ✨" << endl;
-            else {
-                int index; cout << "Assistant: Enter task number to delete: "; cin >> index; cin.ignore(); 
-                if (index > 0 && index <= (int)todoList.size()) {
-                    todoList.erase(todoList.begin() + (index - 1)); saveTasksToFile(todoList); 
-                    cout << "Assistant: Task removed! Remaining: " << todoList.size() << " 🎯" << endl;
-                }
+            if (todoList.empty()) { cout << "Stack empty! ✨" << endl; continue; }
+            int index; cout << "Enter task number: "; cin >> index; cin.ignore();
+            if (index > 0 && index <= (int)todoList.size()) {
+                todoList.erase(todoList.begin() + (index - 1)); saveTasksToFile(todoList);
+                cout << "Assistant: Task purged. 🎯" << endl;
             }
         }
 
-        // 10. Dev Notepad
-        else if (lowerInput == "write note") {
-            ofstream outfile("notes.txt", ios_base::app);
-            cout << "Assistant: What should I write down?: "; string note; getline(cin, note);
-            outfile << note << endl; outfile.close();
-            cout << "Assistant: Note saved to memory! 📝" << endl;
+        // 5. Diagnostics & Telemetry
+        else if (lowerInput == "runtime" || lowerInput == "uptime") {
+            auto currentTime = chrono::steady_clock::now();
+            auto totalSeconds = chrono::duration_cast<chrono::seconds>(currentTime - startTime).count();
+            cout << "System Core Uptime: " << totalSeconds / 3600 << "h " << (totalSeconds % 3600) / 60 << "m " << totalSeconds % 60 << "s" << endl;
         }
-        else if (lowerInput == "read note") {
-            ifstream infile("notes.txt"); string line;
-            cout << "--- Your Dev Notes ---" << endl;
-            if (infile.is_open()) {
-                while (getline(infile, line)) cout << "- " << line << endl;
-                infile.close();
-            }
-        }
-
-        // 11. Motivation
-        else if (lowerInput == "motivation") {
-            string quotes[] = {
-                "Karthikeyan, the stage at Tesla 2035 is waiting for you! 🏎️",
-                "Every line of code is a step toward success. Keep going! 💻"
-            };
-            srand(time(0)); cout << "Assistant: " << quotes[rand() % 2] << endl;
-        }
-
-        // 12. Special Day Reminder
-        else if (lowerInput == "add event") {
-            string date, eventName;
-            cout << "Assistant: Enter the date (DD/MM): "; cin >> date;
-            cout << "Assistant: What is the occasion?: "; cin.ignore(); getline(cin, eventName);
-            ofstream eventFile("events.txt", ios_base::app); eventFile << date << " " << eventName << endl; eventFile.close();
-            cout << "Assistant: Noted! ✅";
-        }
-        else if (lowerInput == "today") {
-            time_t now = time(0); tm *ltm = localtime(&now);
-            char curDate[6]; strftime(curDate, sizeof(curDate), "%d/%m", ltm); 
-            ifstream eventFile("events.txt"); string fileDate, fileEvent; bool found = false;
-            while (eventFile >> fileDate) {
-                getline(eventFile, fileEvent);
-                if (fileDate == string(curDate)) {
-                    cout << "🔔 [Special Event Today!]:" << fileEvent << " 🚀" << endl; found = true;
-                }
-            }
-            if (!found) cout << "Assistant: Nothing special scheduled for today! ✨" << endl;
-            eventFile.close();
-        }
-
-        // 13. Legacy Tesla Battery Logic
-        else if (lowerInput == "battery") {
-            double p; cout << "Assistant: Battery %? "; cin >> p; cin.ignore();
-            if (p >= 0 && p <= 100) cout << "Assistant: Estimated Range: " << p * 5 << " KM! 🚗🔋" << endl;
-        }
-        else if (lowerInput == "charge") {
-            double current_pct; cout << "Assistant: Current battery % (0-100)?: "; cin >> current_pct; cin.ignore();
-            if (current_pct >= 0 && current_pct < 100) {
-                double needed = 100.0 - current_pct;
-                cout << "⚡ Tesla Home Wall Connector: Approx. " << (needed / 0.12) / 60 << " hours." << endl;
-            }
-        }
-
-        // 14. Tesla Model Fleet Customizer
-        else if (lowerInput == "model") {
-            int choice; cout << "Enter Model choice (1-4): "; cin >> choice; cin.ignore();
-            if (choice == 1) cout << "🚗 Model S Plaid | 🔋 637 KM | ⚡ 0-100: 2.1s 🔥" << endl;
-            else if (choice == 2) cout << "🚗 Model 3 LR | 🔋 576 KM | ⚡ 0-100: 4.2s" << endl;
-        }
-
-        // 15. Balanced Schedule Optimizer
         else if (lowerInput == "schedule") {
-            cout << "\n--- 🎯 Routine Balance ---" << endl;
-            cout << "🌅 06:00 AM - 07:30 AM -> RSS Shakha Drill" << endl;
-            cout << "💻 04:00 PM - 07:00 PM -> C++ Coding & GitHub Commits 🟩" << endl;
+            cout << "\n--- 🎯 Routine Balance ---\n🌅 06:00 AM - 07:30 AM -> RSS Shakha Drill\n💻 04:00 PM - 07:00 PM -> C++ Coding & GitHub Commits 🟩" << endl;
         }
-
-        // 16. Tesla Project Milestone Tracker
         else if (lowerInput == "milestones") {
-            cout << "\n--- 🏎️ PROJECT MILESTONES ---" << endl;
-            cout << "[✅] Level 1: Core Syntax & CLI Assistant ---> 100% DONE! 🎉" << endl;
-            cout << "[✅] Level 2: OOP & STL Vectors ---> 100% DONE! 🎉" << endl;
-            cout << "[✅] Level 3: Advanced EV Battery Simulation Logic ---> 100% DONE! 🏆🏎️" << endl;
-            cout << "[🔒] Level 4: Object-Oriented System Architecture ---> Up Next!" << endl;
+            cout << "\n--- 🏎️ PROJECT MILESTONES ---\n[✅] Level 1: Core Syntax & CLI Assistant -> 100%\n[✅] Level 2: OOP & STL Vectors -> 100%\n[✅] Level 3: Advanced EV Battery Simulation -> 100%\n[⏳] Level 4: Object-Oriented Architecture -> (CURRENT LEVEL - 50% DONE)" << endl;
         }
-
-        // 17. Environment & Weather
-        else if (lowerInput == "weather") {
-            system("am start -a android.intent.action.VIEW -d \"https://www.google.com/search?q=weather+chennai\"");
-        }
-
-        // 18. Status & Profile Links
         else if (lowerInput == "status") {
-            cout << "V7.3 | Dev: Karthikeyan | Layer: Octovalve HVAC Loop | Target: Tesla 2035 🏎️" << endl;
+            cout << "V8.1 | Dev: Karthikeyan | Architecture: OOP Constructors | Target: Tesla 2035 🏎️" << endl;
         }
         else if (lowerInput == "github") {
             system("am start -a android.intent.action.VIEW -d https://github.com/rushsvanth-cmyk");
         }
         else {
-            cout << "Assistant: Unrecognized entry. Try 'thermal override', 'simulate ev', or 'status'!" << endl;
+            cout << "Assistant: Unrecognized command sequence. Try 'simulate ev' or 'milestones'!" << endl;
         }
     } 
     return 0; 
 }
+
+
