@@ -14,8 +14,8 @@ using namespace std;
 const auto startTime = chrono::steady_clock::now();
 
 void displayBanner() {
-    cout << "--- System Online (V7.2 - Regenerative Brake Sim) ---" << endl;
-    cout << "(Commands: hi, status, runtime, simulate ev, optimize charge, simulate regen, battery, charge, model, add task, view task, delete task, schedule, milestones, clear, exit)" << endl;
+    cout << "--- System Online (V7.3 - Thermal Management Core) ---" << endl;
+    cout << "(Commands: hi, status, runtime, simulate ev, optimize charge, simulate regen, thermal override, battery, charge, model, add task, view task, delete task, schedule, milestones, clear, exit)" << endl;
 }
 
 void saveTasksToFile(const vector<string>& list) {
@@ -134,12 +134,12 @@ int main()
             }
         }
 
-        // --- 5. NEW: Tesla Regenerative Braking Simulator (V7.2) ---
+        // 5. Tesla Regenerative Braking Simulator
         else if (lowerInput == "simulate regen" || lowerInput == "regen") {
             double initialSpeed, finalSpeed, duration;
-            const double TESLA_MASS = 2108.0;       // Model S curb weight in kg
-            const double REGEN_EFFICIENCY = 0.75;    // 75% kinetic-to-electric capture rating
-            const double WH_PER_JOULE = 1.0 / 3600.0; // Conversion factor
+            const double TESLA_MASS = 2108.0;       
+            const double REGEN_EFFICIENCY = 0.75;    
+            const double WH_PER_JOULE = 1.0 / 3600.0; 
 
             cout << "\n--- 🔄 Tesla Kinetic Energy Recovery System (KERS) ---" << endl;
             cout << "Enter Initial Speed (in km/h): "; cin >> initialSpeed;
@@ -148,27 +148,53 @@ int main()
             cin.ignore();
 
             if (initialSpeed > finalSpeed && finalSpeed >= 0 && duration > 0) {
-                // Convert speeds from km/h to m/s for physics metrics
                 double v_i = initialSpeed / 3.6;
                 double v_f = finalSpeed / 3.6;
-
-                // Calculate loss in kinetic energy: KE = 0.5 * m * (v_i^2 - v_f^2)
                 double kineticEnergyJoles = 0.5 * TESLA_MASS * ((v_i * v_i) - (v_f * v_f));
                 double recoveredWh = kineticEnergyJoles * WH_PER_JOULE * REGEN_EFFICIENCY;
-                
-                // Assuming standard Tesla consumption profile of 150 Wh/KM (or 0.15 Wh/meter)
                 double addedMeters = recoveredWh / 0.15;
 
-                cout << "\n--- Recovery Metrics Saved ---" << endl;
-                cout << "📉 Kinetic Energy Spent: " << kineticEnergyJoles / 1000.0 << " kJ" << endl;
-                cout << "🔋 Pack Energy Recovered: " << recoveredWh << " Wh ⚡" << endl;
-                cout << "🛣️ Free Range Added: " << addedMeters << " meters (" << addedMeters / 1000.0 << " KM)" << endl;
-            } else {
-                cout << "Assistant: Invalid physics values. Initial speed must exceed target speed! ❌" << endl;
+                cout << "\n🔋 Pack Energy Recovered: " << recoveredWh << " Wh ⚡" << endl;
+                cout << "🛣️ Free Range Added: " << addedMeters / 1000.0 << " KM" << endl;
             }
         }
 
-        // 6. Runtime Performance Utility
+        // --- 6. NEW: Tesla Thermal Management Override (V7.3) ---
+        else if (lowerInput == "thermal override" || lowerInput == "hvac") {
+            double cellTemp;
+            cout << "\n--- 🌡️ Tesla Octovalve Thermal Loop Status ---" << endl;
+            cout << "Enter Current Battery Cell Temperature (°C): ";
+            cin >> cellTemp;
+            cin.ignore();
+
+            cout << "\n--- HVAC Fluid Dynamics System Deployment ---" << endl;
+            if (cellTemp >= 20.0 && cellTemp <= 35.0) {
+                cout << "✅ Status: OPTIMAL. Fluid loops bypassing radiator. Power Draw: 0.0 kW" << endl;
+            } 
+            else if (cellTemp < 20.0) {
+                // Cold scenario: Activate internal heat pump / stator waste heat
+                double deficit = 20.0 - cellTemp;
+                double heatPower = deficit * 0.45; // 0.45 kW required per degree deficit
+                if (heatPower > 6.0) heatPower = 6.0; // Max out heat pump capacity
+                
+                cout << "❄️ Status: CELL UNDER-TEMPERATURE. Activating Powertrain Heat Pump." << endl;
+                cout << "⚡ Heating Loop Target: 22.0°C | Active Power Consumption: " << heatPower << " kW" << endl;
+            } 
+            else {
+                // Hot scenario: Activate refrigeration chillers
+                double surplus = cellTemp - 35.0;
+                double coolPower = surplus * 0.65; // 0.65 kW required per degree surplus
+                if (coolPower > 10.0) coolPower = 10.0; // Max compressor dissipation
+                
+                cout << "🔥 Status: CELL OVER-TEMPERATURE. Activating Chiller Refrigeration." << endl;
+                cout << "⚡ Cooling Loop Target: 30.0°C | Active Power Consumption: " << coolPower << " kW" << endl;
+                if (cellTemp > 55.0) {
+                    cout << "⚠️ WARNING: Thermal runaway mitigation threshold met! Supercharging throttled." << endl;
+                }
+            }
+        }
+
+        // 7. Runtime Performance Utility
         else if (lowerInput == "runtime" || lowerInput == "uptime") {
             auto currentTime = chrono::steady_clock::now();
             auto totalSeconds = chrono::duration_cast<chrono::seconds>(currentTime - startTime).count();
@@ -176,12 +202,12 @@ int main()
             cout << "\nSystem Core Uptime: " << hours << "h " << minutes << "m " << seconds << "s" << endl;
         }
 
-        // 7. Clear Screen Logic
+        // 8. Clear Screen Logic
         else if (lowerInput == "clear" || lowerInput == "cls") {
             cout << "\033[2J\033[1;1H"; displayBanner(); continue;
         }
 
-        // 8. Dynamic STL Task Management
+        // 9. Dynamic STL Task Management
         else if (lowerInput == "add task") {
             string newTask;
             cout << "Assistant: What task are we tackling next, Karthikeyan?: "; getline(cin, newTask);
@@ -206,7 +232,7 @@ int main()
             }
         }
 
-        // 9. Dev Notepad
+        // 10. Dev Notepad
         else if (lowerInput == "write note") {
             ofstream outfile("notes.txt", ios_base::app);
             cout << "Assistant: What should I write down?: "; string note; getline(cin, note);
@@ -222,7 +248,7 @@ int main()
             }
         }
 
-        // 10. Motivation
+        // 11. Motivation
         else if (lowerInput == "motivation") {
             string quotes[] = {
                 "Karthikeyan, the stage at Tesla 2035 is waiting for you! 🏎️",
@@ -231,7 +257,7 @@ int main()
             srand(time(0)); cout << "Assistant: " << quotes[rand() % 2] << endl;
         }
 
-        // 11. Special Day Reminder
+        // 12. Special Day Reminder
         else if (lowerInput == "add event") {
             string date, eventName;
             cout << "Assistant: Enter the date (DD/MM): "; cin >> date;
@@ -253,7 +279,7 @@ int main()
             eventFile.close();
         }
 
-        // 12. Legacy Tesla Battery Logic
+        // 13. Legacy Tesla Battery Logic
         else if (lowerInput == "battery") {
             double p; cout << "Assistant: Battery %? "; cin >> p; cin.ignore();
             if (p >= 0 && p <= 100) cout << "Assistant: Estimated Range: " << p * 5 << " KM! 🚗🔋" << endl;
@@ -266,46 +292,44 @@ int main()
             }
         }
 
-        // 13. Tesla Model Fleet Customizer
+        // 14. Tesla Model Fleet Customizer
         else if (lowerInput == "model") {
             int choice; cout << "Enter Model choice (1-4): "; cin >> choice; cin.ignore();
             if (choice == 1) cout << "🚗 Model S Plaid | 🔋 637 KM | ⚡ 0-100: 2.1s 🔥" << endl;
             else if (choice == 2) cout << "🚗 Model 3 LR | 🔋 576 KM | ⚡ 0-100: 4.2s" << endl;
         }
 
-        // 14. Balanced Schedule Optimizer
+        // 15. Balanced Schedule Optimizer
         else if (lowerInput == "schedule") {
             cout << "\n--- 🎯 Routine Balance ---" << endl;
             cout << "🌅 06:00 AM - 07:30 AM -> RSS Shakha Drill" << endl;
             cout << "💻 04:00 PM - 07:00 PM -> C++ Coding & GitHub Commits 🟩" << endl;
         }
 
-        // 15. Tesla Project Milestone Tracker
+        // 16. Tesla Project Milestone Tracker
         else if (lowerInput == "milestones") {
             cout << "\n--- 🏎️ PROJECT MILESTONES ---" << endl;
             cout << "[✅] Level 1: Core Syntax & CLI Assistant ---> 100% DONE! 🎉" << endl;
             cout << "[✅] Level 2: OOP & STL Vectors ---> 100% DONE! 🎉" << endl;
-            cout << "[⏳] Level 3: Advanced EV Battery Simulation Logic ---> (CURRENT LEVEL - 60% DONE)" << endl;
+            cout << "[✅] Level 3: Advanced EV Battery Simulation Logic ---> 100% DONE! 🏆🏎️" << endl;
+            cout << "[🔒] Level 4: Object-Oriented System Architecture ---> Up Next!" << endl;
         }
 
-        // 16. Environment & Weather
+        // 17. Environment & Weather
         else if (lowerInput == "weather") {
             system("am start -a android.intent.action.VIEW -d \"https://www.google.com/search?q=weather+chennai\"");
         }
 
-        // 17. Status & Profile Links
+        // 18. Status & Profile Links
         else if (lowerInput == "status") {
-            cout << "V7.2 | Dev: Karthikeyan | Layer: KERS Recovery Loop | Target: Tesla 2035 🏎️" << endl;
+            cout << "V7.3 | Dev: Karthikeyan | Layer: Octovalve HVAC Loop | Target: Tesla 2035 🏎️" << endl;
         }
         else if (lowerInput == "github") {
             system("am start -a android.intent.action.VIEW -d https://github.com/rushsvanth-cmyk");
         }
         else {
-            cout << "Assistant: Unrecognized entry. Try 'simulate regen', 'simulate ev', or 'status'!" << endl;
+            cout << "Assistant: Unrecognized entry. Try 'thermal override', 'simulate ev', or 'status'!" << endl;
         }
     } 
     return 0; 
 }
-
-
-
