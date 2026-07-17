@@ -5,6 +5,7 @@
 #include <ctime>
 #include <sstream> 
 #include <unistd.h> 
+#include <chrono> // For high-precision system timing
 
 using namespace std;
 
@@ -18,8 +19,8 @@ int main()
     static string tasks[5]; 
     static int taskCount = 0;
 
-    cout << "--- System Online (V4.9 - Premium) ---" << endl;
-    cout << "(Commands: hi, status, search for..., add task, remove task, tesla hub, exit)" << endl;
+    cout << "--- System Online (V5.0 - Ultimate System Edition) ---" << endl;
+    cout << "(Commands: hi, status, ev health, search for..., remove task, system speed, exit)" << endl;
 
     while (true)
     {
@@ -27,6 +28,9 @@ int main()
         getline(cin, input);
 
         if (input.empty()) continue;
+
+        // Start timing the system response execution speed
+        auto start_time = chrono::high_resolution_clock::now();
 
         // --- 1. Automatic Math Detection ---
         if (isdigit(input[0])) 
@@ -77,20 +81,37 @@ int main()
             cout << "Assistant: Hello! I am your virtual assistant. How can I help you today?" << endl;
         }
 
-        // --- 3. Tesla Battery Logic ---
-        else if (lowerInput == "battery" || lowerInput == "range") 
+        // --- 3. [UPGRADED] Advanced EV Battery Health Logic ---
+        else if (lowerInput == "battery" || lowerInput == "range" || lowerInput == "ev health") 
         {
             double battery_percent;
             cout << "Assistant: What is your current battery percentage (0-100)? ";
             cin >> battery_percent;
+            
+            double pack_cycles;
+            cout << "Assistant: Total charging cycles on the battery pack? ";
+            cin >> pack_cycles;
             cin.ignore(1000, '\n'); 
 
-            if (battery_percent >= 0 && battery_percent <= 100) 
+            if (battery_percent >= 0 && battery_percent <= 100 && pack_cycles >= 0) 
             {
-                double range = battery_percent * 5;
-                cout << "Assistant: Estimated range: " << range << " KM! 🚗🔋" << endl;
+                // Advanced Estimation Formula: Every 100 cycles causes roughly 0.5% battery degradation
+                double battery_health = 100.0 - (pack_cycles * 0.005);
+                if (battery_health < 70.0) battery_health = 70.0; // Dynamic floor limit
+
+                // Range baseline modified by State of Health (SoH)
+                double max_range_possible = 500.0 * (battery_health / 100.0);
+                double current_range = max_range_possible * (battery_percent / 100.0);
+
+                cout << "\n--- EV Pack Diagnostic Status ---" << endl;
+                cout << "Battery State of Health (SoH): " << battery_health << "%" << endl;
+                cout << "Estimated Current Range: " << current_range << " KM 🚗🔋" << endl;
+                
+                if (battery_health < 80.0) {
+                    cout << "Notice: High cycle count detected. Battery pack degradation visible. ⚠️" << endl;
+                }
             } 
-            else cout << "Assistant: Invalid percentage! ❌" << endl;
+            else cout << "Assistant: Invalid specifications entered. ❌" << endl;
         }
 
         // --- 4. Reminder Logic ---
@@ -133,7 +154,6 @@ int main()
                 for (int i = 0; i < taskCount; i++) cout << i + 1 << ". " << tasks[i] << endl;
             }
         }
-        // [NEW] Feature: Delete a specific task using basic array shifting
         else if (lowerInput == "remove task" || lowerInput == "delete task") {
             if (taskCount == 0) {
                 cout << "Assistant: Your list is already empty!" << endl;
@@ -144,15 +164,12 @@ int main()
                 cin.ignore(1000, '\n');
 
                 if (index >= 1 && index <= taskCount) {
-                    // Shift elements left to clear the item row
                     for (int i = index - 1; i < taskCount - 1; i++) {
                         tasks[i] = tasks[i + 1];
                     }
                     taskCount--;
                     cout << "Assistant: Task #" << index << " removed successfully! 🗑️" << endl;
-                } else {
-                    cout << "Assistant: Invalid task number! ❌" << endl;
-                }
+                } else cout << "Assistant: Invalid task number! ❌" << endl;
             }
         }
         else if (lowerInput == "clear list" || lowerInput == "reset list") {
@@ -193,7 +210,6 @@ int main()
             cout << "Assistant: Opening GitHub... 🚀" << endl;
             system("am start -a android.intent.action.VIEW -d https://github.com/rushsvanth-cmyk");
         }
-        // [NEW] Feature: Tesla Engineering Hub shortcut
         else if (lowerInput == "tesla hub" || lowerInput == "tesla careers") {
             cout << "Assistant: Connecting to Tesla Engineering Careers dashboard, Karthikeyan... 🏎️⚡" << endl;
             system("am start -a android.intent.action.VIEW -d https://www.tesla.com/careers");
@@ -201,18 +217,25 @@ int main()
         else if (lowerInput == "status")
         {
             cout << "\n--- Assistant Status ---" << endl;
-            cout << "Version: 4.9 | Developer: Karthikeyan | Target: Tesla Autopilot/Core Architecture 🏎️" << endl;
+            cout << "Version: 5.0 | Kernel Status: Stable | Core Target: Tesla Architect 🏎️" << endl;
             cout << "Active Tasks Stored: " << taskCount << "/5" << endl;
             cout << "------------------------" << endl;
         }
         else if (lowerInput == "who is karthikeyan") {
             cout << "Assistant: Karthikeyan is a future Tesla Engineer! He is currently building me—his advanced virtual assistant. 🔥" << endl;
         }
+        
+        // --- 9. [NEW] System Performance Metric ---
+        else if (lowerInput == "system speed" || lowerInput == "latency") {
+            auto end_time = chrono::high_resolution_clock::now();
+            auto duration = chrono::duration_cast<chrono::microseconds>(end_time - start_time).count();
+            cout << "Assistant: Internal engine latency check: " << duration << " microseconds. Running smoothly! ⚡" << endl;
+        }
 
         // --- Default Response ---
         else 
         {
-            cout << "Assistant: I didn't quite catch that. Try 'hi', 'status', 'remove task', or 'tesla hub'!" << endl;
+            cout << "Assistant: I didn't quite catch that. Try 'hi', 'status', 'ev health', or 'system speed'!" << endl;
         }
     } 
 
