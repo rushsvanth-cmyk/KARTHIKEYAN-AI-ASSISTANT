@@ -6,36 +6,37 @@
 #include <sstream> 
 #include <unistd.h> 
 #include <chrono> 
-#include <fstream> // [NEW] Required for reading and writing files
+#include <fstream> 
+#include <vector> // [NEW] Required for using dynamic vectors instead of rigid arrays
 
 using namespace std;
 
 // File name for storage
 const string FILE_NAME = "tasks.txt";
-static string tasks[5]; 
-static int taskCount = 0;
 
-// [NEW] Function to save tasks to the phone storage
+// [UPGRADED] Using std::vector to allow infinite/dynamic storage expansion
+static vector<string> tasks; 
+
+// [CHANGED] Saves dynamically sized vector data to the text file
 void saveTasksToFile() {
     ofstream outFile(FILE_NAME);
     if (outFile.is_open()) {
-        for (int i = 0; i < taskCount; i++) {
-            outFile << tasks[i] << endl;
+        for (const string& task : tasks) {
+            outFile << task << endl;
         }
         outFile.close();
     }
 }
 
-// [NEW] Function to load tasks automatically when the program starts
+// [CHANGED] Loads items directly into the dynamic vector container
 void loadTasksFromFile() {
     ifstream inFile(FILE_NAME);
     if (inFile.is_open()) {
         string task;
-        taskCount = 0;
-        while (getline(inFile, task) && taskCount < 5) {
+        tasks.clear(); // Wipe runtime cache before reloading
+        while (getline(inFile, task)) {
             if (!task.empty()) {
-                tasks[taskCount] = task;
-                taskCount++;
+                tasks.push_back(task); // Dynamically appends items to vector
             }
         }
         inFile.close();
@@ -48,13 +49,13 @@ int main()
     double num1, num2;
     char op;
 
-    // Load saved data immediately on execution
+    // Load saved tasks dynamically when the program boots up
     loadTasksFromFile();
 
-    cout << "--- System Online (V5.1 - Persistent Storage) ---" << endl;
-    cout << "(Commands: hi, status, ev health, add task, list, system speed, exit)" << endl;
-    if (taskCount > 0) {
-        cout << "Assistant: Welcome back Karthikeyan! Loaded " << taskCount << " active tasks from memory. 💾" << endl;
+    cout << "--- System Online (V5.2 - Dynamic Vector Engine) ---" << endl;
+    cout << "(Commands: hi, status, ev health, add task, remove task, list, exit)" << endl;
+    if (!tasks.empty()) {
+        cout << "Assistant: Welcome back Karthikeyan! Restored " << tasks.size() << " active tasks from storage. 💾" << endl;
     }
 
     while (true)
@@ -163,47 +164,47 @@ int main()
             }
         }
 
-        // --- 5. Success Task List System ---
+        // --- 5. [UPGRADED] Dynamic Success Task List System ---
         else if (lowerInput == "add task") {
-            if (taskCount < 5) {
-                cout << "Assistant: Task to add: ";
-                string newTask;
-                getline(cin, newTask);
-                tasks[taskCount] = newTask;
-                taskCount++;
-                saveTasksToFile(); // [CHANGED] Save changes instantly
-                cout << "Assistant: Added and saved to memory. ✅" << endl;
-            } else cout << "Assistant: List full! ❌" << endl;
+            cout << "Assistant: Task to add: ";
+            string newTask;
+            getline(cin, newTask);
+            
+            // push_back automatically expands memory allocation on runtime
+            tasks.push_back(newTask); 
+            saveTasksToFile(); 
+            cout << "Assistant: Added and saved to dynamic memory. ✅" << endl;
         }
         else if (lowerInput == "list" || lowerInput == "tasks") {
             cout << "\n--- Your Success Task List ---" << endl;
-            if (taskCount == 0) cout << "No tasks yet. ✨" << endl;
+            if (tasks.empty()) cout << "No tasks yet. ✨" << endl;
             else {
-                for (int i = 0; i < taskCount; i++) cout << i + 1 << ". " << tasks[i] << endl;
+                // tasks.size() adjusts dynamically based on exact item counts
+                for (size_t i = 0; i < tasks.size(); i++) {
+                    cout << i + 1 << ". " << tasks[i] << endl;
+                }
             }
         }
         else if (lowerInput == "remove task" || lowerInput == "delete task") {
-            if (taskCount == 0) {
+            if (tasks.empty()) {
                 cout << "Assistant: Your list is already empty!" << endl;
             } else {
                 int index;
-                cout << "Assistant: Enter the task number to remove (1-" << taskCount << "): ";
+                cout << "Assistant: Enter the task number to remove (1-" << tasks.size() << "): ";
                 cin >> index;
                 cin.ignore(1000, '\n');
 
-                if (index >= 1 && index <= taskCount) {
-                    for (int i = index - 1; i < taskCount - 1; i++) {
-                        tasks[i] = tasks[i + 1];
-                    }
-                    taskCount--;
-                    saveTasksToFile(); // [CHANGED] Save updates to file
+                if (index >= 1 && index <= static_cast<int>(tasks.size())) {
+                    // Native vector erasure cleanly pops the item out without manually shifting elements
+                    tasks.erase(tasks.begin() + (index - 1));
+                    saveTasksToFile(); 
                     cout << "Assistant: Task #" << index << " removed! 🗑️" << endl;
                 } else cout << "Assistant: Invalid task number! ❌" << endl;
             }
         }
         else if (lowerInput == "clear list" || lowerInput == "reset list") {
-            taskCount = 0;
-            saveTasksToFile(); // [CHANGED] Wipe the text file clean
+            tasks.clear(); // Wipes vector bounds entirely
+            saveTasksToFile(); 
             cout << "Assistant: The task list has been wiped clean from storage!" << endl;
         }
 
@@ -247,8 +248,8 @@ int main()
         else if (lowerInput == "status")
         {
             cout << "\n--- Assistant Status ---" << endl;
-            cout << "Version: 5.1 | Storage: Persistent | Target: Tesla Architect 🏎️" << endl;
-            cout << "Active Tasks Stored: " << taskCount << "/5" << endl;
+            cout << "Version: 5.2 | Architecture: Dynamic Vector Containers | Core Target: Tesla Architect 🏎️" << endl;
+            cout << "Total Tracked Tasks Stored: " << tasks.size() << " items" << endl;
             cout << "------------------------" << endl;
         }
         else if (lowerInput == "who is karthikeyan") {
