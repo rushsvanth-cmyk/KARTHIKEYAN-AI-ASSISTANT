@@ -8,36 +8,39 @@
 #include <chrono> 
 #include <fstream> 
 #include <vector> 
+#include <stdexcept> // [NEW] Required for standard exception handling classes
 
 using namespace std;
 
 // ============================================================================
-// --- [NEW] TESLA BATTERY MANAGEMENT SYSTEM CLASS (OOP ENCAPSULATION) ---
+// --- TESLA BATTERY MANAGEMENT SYSTEM CLASS (OOP ENCAPSULATION) ---
 // ============================================================================
 class TeslaBatteryManager {
 private:
     double batteryPercent;
     double totalCycles;
-    const double baselineRange = 500.0; // Max baseline range for a generic Tesla Pack
+    const double baselineRange = 500.0; 
 
-    // Inner physical logic computation
     double calculateStateOfHealth() const {
-        // Engineering model: Loss of 0.005% capacity per full discharge cycle
         double health = 100.0 - (totalCycles * 0.005);
-        return (health < 70.0) ? 70.0 : health; // Dynamic floor limit
+        return (health < 70.0) ? 70.0 : health; 
     }
 
 public:
-    // Constructor initialization
     TeslaBatteryManager() : batteryPercent(100.0), totalCycles(0) {}
 
-    // Setters to feed parameters securely into private attributes
+    // [UPGRADED] Validates input rules and throws hardware runtime exceptions
     void setDiagnostics(double percent, double cycles) {
+        if (percent < 0.0 || percent > 100.0) {
+            throw invalid_argument("State of Charge outside physical parameters (0-100%).");
+        }
+        if (cycles < 0.0) {
+            throw invalid_argument("Negative cycle matrix data rejected by BMS.");
+        }
         batteryPercent = percent;
         totalCycles = cycles;
     }
 
-    // Diagnostics processing pipeline
     void displayHealthReport() const {
         double soh = calculateStateOfHealth();
         double maxRangePossible = baselineRange * (soh / 100.0);
@@ -47,12 +50,6 @@ public:
         cout << "System Status               : Online & Monitoring" << endl;
         cout << "Battery State of Health(SoH): " << soh << "%" << endl;
         cout << "Target Adaptive Range       : " << currentRange << " KM 🚗🔋" << endl;
-        
-        if (soh < 85.0) {
-            cout << "Warning: Thermal Management recommends low DC-Fast Charging usage. ⚠️" << endl;
-        } else {
-            cout << "Cell Degradation Footprint  : Optimal Operational Window." << endl;
-        }
         cout << "---------------------------------------------" << endl;
     }
 };
@@ -92,12 +89,10 @@ int main()
     double num1, num2;
     char op;
 
-    // Instantiate our new class object
     TeslaBatteryManager bmsModule;
-
     loadTasksFromFile();
 
-    cout << "--- System Online (V5.3 - Object-Oriented Core) ---" << endl;
+    cout << "--- System Online (V5.4 - Crash Resilience Architecture) ---" << endl;
     cout << "(Commands: hi, status, ev health, add task, remove task, list, exit)" << endl;
 
     while (true)
@@ -151,23 +146,31 @@ int main()
             cout << "Assistant: Hello! I am your virtual assistant. How can I help you today?" << endl;
         }
 
-        // --- 3. [UPGRADED TO OOP] EV Battery Health Module ---
+        // --- 3. [TRY-CATCH PROTECTED] EV Battery Health Module ---
         else if (lowerInput == "battery" || lowerInput == "range" || lowerInput == "ev health") 
         {
             double pct, cycles;
             cout << "Assistant: What is your current battery percentage (0-100)? ";
-            cin >> pct;
-            cout << "Assistant: Total charging cycles on the battery pack? ";
-            cin >> cycles;
-            cin.ignore(1000, '\n'); 
+            
+            // Safety Wrapper Block
+            try {
+                if (!(cin >> pct)) throw runtime_error("Invalid alphanumeric data type entered.");
+                
+                cout << "Assistant: Total charging cycles on the battery pack? ";
+                if (!(cin >> cycles)) throw runtime_error("Invalid alphanumeric data type entered.");
+                cin.ignore(1000, '\n'); 
 
-            if (pct >= 0 && pct <= 100 && cycles >= 0) {
-                // Pass user parameters into the class container securely
+                // Execute validated logic runtime
                 bmsModule.setDiagnostics(pct, cycles);
-                // Call public module function to generate telemetry output
                 bmsModule.displayHealthReport();
             } 
-            else cout << "Assistant: Invalid specifications entered. ❌" << endl;
+            // Catches argument boundary violations or bad stream data type data
+            catch (const exception& e) {
+                cout << "BMS Failure Mitigation Hook: " << e.what() << " ❌" << endl;
+                cout << "Assistant: Recovering input registers... System status stabilized." << endl;
+                cin.clear();            // Clear stream error states
+                cin.ignore(1000, '\n'); // Purge corrupted bytes inside channel buffer
+            }
         }
 
         // --- 4. Reminders ---
@@ -206,19 +209,30 @@ int main()
                 for (size_t i = 0; i < tasks.size(); i++) cout << i + 1 << ". " << tasks[i] << endl;
             }
         }
+        // [TRY-CATCH PROTECTED] Index removal protection
         else if (lowerInput == "remove task" || lowerInput == "delete task") {
-            if (tasks.empty()) cout << "Assistant: Your list is already empty!" << endl;
-            else {
+            if (tasks.empty()) {
+                cout << "Assistant: Your list is already empty!" << endl;
+            } else {
                 int index;
                 cout << "Assistant: Enter the task number to remove (1-" << tasks.size() << "): ";
-                cin >> index;
-                cin.ignore(1000, '\n');
+                try {
+                    if (!(cin >> index)) throw runtime_error("Task choice sequence must be integers.");
+                    cin.ignore(1000, '\n');
 
-                if (index >= 1 && index <= static_cast<int>(tasks.size())) {
+                    if (index < 1 || index > static_cast<int>(tasks.size())) {
+                        throw out_of_range("Requested element address index is out of array boundaries.");
+                    }
+
                     tasks.erase(tasks.begin() + (index - 1));
                     saveTasksToFile(); 
                     cout << "Assistant: Task #" << index << " removed! 🗑️" << endl;
-                } else cout << "Assistant: Invalid task number! ❌" << endl;
+                }
+                catch (const exception& e) {
+                    cout << "Task Engine Exception: " << e.what() << " ❌" << endl;
+                    cin.clear();
+                    cin.ignore(1000, '\n');
+                }
             }
         }
         else if (lowerInput == "clear list" || lowerInput == "reset list") {
@@ -263,7 +277,7 @@ int main()
         }
         else if (lowerInput == "status") {
             cout << "\n--- Assistant Status ---" << endl;
-            cout << "Version: 5.3 | System Infrastructure: Object-Oriented Architecture (OOP)" << endl;
+            cout << "Version: 5.4 | Signal Integrity: Guardrail Exception Handlers Enabled" << endl;
             cout << "Total Tracked Tasks Stored: " << tasks.size() << " items" << endl;
             cout << "------------------------" << endl;
         }
