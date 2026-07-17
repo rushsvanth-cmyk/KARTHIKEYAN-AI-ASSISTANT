@@ -7,17 +7,60 @@
 #include <unistd.h> 
 #include <chrono> 
 #include <fstream> 
-#include <vector> // [NEW] Required for using dynamic vectors instead of rigid arrays
+#include <vector> 
 
 using namespace std;
 
-// File name for storage
-const string FILE_NAME = "tasks.txt";
+// ============================================================================
+// --- [NEW] TESLA BATTERY MANAGEMENT SYSTEM CLASS (OOP ENCAPSULATION) ---
+// ============================================================================
+class TeslaBatteryManager {
+private:
+    double batteryPercent;
+    double totalCycles;
+    const double baselineRange = 500.0; // Max baseline range for a generic Tesla Pack
 
-// [UPGRADED] Using std::vector to allow infinite/dynamic storage expansion
+    // Inner physical logic computation
+    double calculateStateOfHealth() const {
+        // Engineering model: Loss of 0.005% capacity per full discharge cycle
+        double health = 100.0 - (totalCycles * 0.005);
+        return (health < 70.0) ? 70.0 : health; // Dynamic floor limit
+    }
+
+public:
+    // Constructor initialization
+    TeslaBatteryManager() : batteryPercent(100.0), totalCycles(0) {}
+
+    // Setters to feed parameters securely into private attributes
+    void setDiagnostics(double percent, double cycles) {
+        batteryPercent = percent;
+        totalCycles = cycles;
+    }
+
+    // Diagnostics processing pipeline
+    void displayHealthReport() const {
+        double soh = calculateStateOfHealth();
+        double maxRangePossible = baselineRange * (soh / 100.0);
+        double currentRange = maxRangePossible * (batteryPercent / 100.0);
+
+        cout << "\n--- EV Pack Diagnostic Status [BMS Class] ---" << endl;
+        cout << "System Status               : Online & Monitoring" << endl;
+        cout << "Battery State of Health(SoH): " << soh << "%" << endl;
+        cout << "Target Adaptive Range       : " << currentRange << " KM 🚗🔋" << endl;
+        
+        if (soh < 85.0) {
+            cout << "Warning: Thermal Management recommends low DC-Fast Charging usage. ⚠️" << endl;
+        } else {
+            cout << "Cell Degradation Footprint  : Optimal Operational Window." << endl;
+        }
+        cout << "---------------------------------------------" << endl;
+    }
+};
+
+// Global File and Task configurations
+const string FILE_NAME = "tasks.txt";
 static vector<string> tasks; 
 
-// [CHANGED] Saves dynamically sized vector data to the text file
 void saveTasksToFile() {
     ofstream outFile(FILE_NAME);
     if (outFile.is_open()) {
@@ -28,35 +71,34 @@ void saveTasksToFile() {
     }
 }
 
-// [CHANGED] Loads items directly into the dynamic vector container
 void loadTasksFromFile() {
     ifstream inFile(FILE_NAME);
     if (inFile.is_open()) {
         string task;
-        tasks.clear(); // Wipe runtime cache before reloading
+        tasks.clear(); 
         while (getline(inFile, task)) {
-            if (!task.empty()) {
-                tasks.push_back(task); // Dynamically appends items to vector
-            }
+            if (!task.empty()) tasks.push_back(task);
         }
         inFile.close();
     }
 }
 
+// ============================================================================
+// --- MAIN PROGRAM PIPELINE ---
+// ============================================================================
 int main() 
 {
     string input;
     double num1, num2;
     char op;
 
-    // Load saved tasks dynamically when the program boots up
+    // Instantiate our new class object
+    TeslaBatteryManager bmsModule;
+
     loadTasksFromFile();
 
-    cout << "--- System Online (V5.2 - Dynamic Vector Engine) ---" << endl;
+    cout << "--- System Online (V5.3 - Object-Oriented Core) ---" << endl;
     cout << "(Commands: hi, status, ev health, add task, remove task, list, exit)" << endl;
-    if (!tasks.empty()) {
-        cout << "Assistant: Welcome back Karthikeyan! Restored " << tasks.size() << " active tasks from storage. 💾" << endl;
-    }
 
     while (true)
     {
@@ -71,11 +113,9 @@ int main()
         if (isdigit(input[0])) 
         {
             stringstream ss(input);
-            if (ss >> num1 >> op >> num2) 
-            {
+            if (ss >> num1 >> op >> num2) {
                 cout << "Assistant (Math): ";
-                switch(op) 
-                {
+                switch(op) {
                     case '+': cout << num1 + num2 << " ✅"; break;
                     case '-': cout << num1 - num2 << " ✅"; break;
                     case '*': cout << num1 * num2 << " ✅"; break;
@@ -94,57 +134,44 @@ int main()
         string lowerInput = input;
         transform(lowerInput.begin(), lowerInput.end(), lowerInput.begin(), [](unsigned char c){ return tolower(c); });
 
-        // --- 2. Basic System Commands ---
-        if (lowerInput == "exit" || lowerInput == "quit") 
-        {
+        // --- 2. System Routines ---
+        if (lowerInput == "exit" || lowerInput == "quit") {
             cout << "Assistant: Goodbye! Have a wonderful day. 🫂" << endl;
             break;
         }
-        else if (lowerInput == "who is your owner" || lowerInput == "owner") 
-        {
+        else if (lowerInput == "who is your owner" || lowerInput == "owner") {
             cout << "Assistant: I was developed and built by Karthikeyan. 🛠️" << endl;
         }
-        else if (lowerInput == "date" || lowerInput == "time" || lowerInput == "today") 
-        {
+        else if (lowerInput == "date" || lowerInput == "time") {
             time_t now = time(0);
             char* dt = ctime(&now);
             cout << "Assistant: " << dt;
         }
-        else if (lowerInput == "hi" || lowerInput == "hello") 
-        {
+        else if (lowerInput == "hi" || lowerInput == "hello") {
             cout << "Assistant: Hello! I am your virtual assistant. How can I help you today?" << endl;
         }
 
-        // --- 3. EV Battery Health Logic ---
+        // --- 3. [UPGRADED TO OOP] EV Battery Health Module ---
         else if (lowerInput == "battery" || lowerInput == "range" || lowerInput == "ev health") 
         {
-            double battery_percent;
+            double pct, cycles;
             cout << "Assistant: What is your current battery percentage (0-100)? ";
-            cin >> battery_percent;
-            
-            double pack_cycles;
+            cin >> pct;
             cout << "Assistant: Total charging cycles on the battery pack? ";
-            cin >> pack_cycles;
+            cin >> cycles;
             cin.ignore(1000, '\n'); 
 
-            if (battery_percent >= 0 && battery_percent <= 100 && pack_cycles >= 0) 
-            {
-                double battery_health = 100.0 - (pack_cycles * 0.005);
-                if (battery_health < 70.0) battery_health = 70.0; 
-
-                double max_range_possible = 500.0 * (battery_health / 100.0);
-                double current_range = max_range_possible * (battery_percent / 100.0);
-
-                cout << "\n--- EV Pack Diagnostic Status ---" << endl;
-                cout << "Battery State of Health (SoH): " << battery_health << "%" << endl;
-                cout << "Estimated Current Range: " << current_range << " KM 🚗🔋" << endl;
+            if (pct >= 0 && pct <= 100 && cycles >= 0) {
+                // Pass user parameters into the class container securely
+                bmsModule.setDiagnostics(pct, cycles);
+                // Call public module function to generate telemetry output
+                bmsModule.displayHealthReport();
             } 
             else cout << "Assistant: Invalid specifications entered. ❌" << endl;
         }
 
-        // --- 4. Reminder Logic ---
-        else if (lowerInput.find("remind me at") != string::npos)
-        {
+        // --- 4. Reminders ---
+        else if (lowerInput.find("remind me at") != string::npos) {
             string alarmTime = lowerInput.substr(13); 
             cout << "Assistant: Noted. I'll remind you at " << alarmTime << "! ⏰" << endl;
             
@@ -155,8 +182,7 @@ int main()
                 char currentTime[6];
                 strftime(currentTime, sizeof(currentTime), "%H:%M", ltm);
                 
-                if (string(currentTime) == alarmTime)
-                {
+                if (string(currentTime) == alarmTime) {
                     cout << "\n[REMINDER] 🔔 It is " << alarmTime << "! Time to work!" << endl;
                     reminded = true;
                 }
@@ -164,13 +190,11 @@ int main()
             }
         }
 
-        // --- 5. [UPGRADED] Dynamic Success Task List System ---
+        // --- 5. Success Task Lists ---
         else if (lowerInput == "add task") {
             cout << "Assistant: Task to add: ";
             string newTask;
             getline(cin, newTask);
-            
-            // push_back automatically expands memory allocation on runtime
             tasks.push_back(newTask); 
             saveTasksToFile(); 
             cout << "Assistant: Added and saved to dynamic memory. ✅" << endl;
@@ -179,23 +203,18 @@ int main()
             cout << "\n--- Your Success Task List ---" << endl;
             if (tasks.empty()) cout << "No tasks yet. ✨" << endl;
             else {
-                // tasks.size() adjusts dynamically based on exact item counts
-                for (size_t i = 0; i < tasks.size(); i++) {
-                    cout << i + 1 << ". " << tasks[i] << endl;
-                }
+                for (size_t i = 0; i < tasks.size(); i++) cout << i + 1 << ". " << tasks[i] << endl;
             }
         }
         else if (lowerInput == "remove task" || lowerInput == "delete task") {
-            if (tasks.empty()) {
-                cout << "Assistant: Your list is already empty!" << endl;
-            } else {
+            if (tasks.empty()) cout << "Assistant: Your list is already empty!" << endl;
+            else {
                 int index;
                 cout << "Assistant: Enter the task number to remove (1-" << tasks.size() << "): ";
                 cin >> index;
                 cin.ignore(1000, '\n');
 
                 if (index >= 1 && index <= static_cast<int>(tasks.size())) {
-                    // Native vector erasure cleanly pops the item out without manually shifting elements
                     tasks.erase(tasks.begin() + (index - 1));
                     saveTasksToFile(); 
                     cout << "Assistant: Task #" << index << " removed! 🗑️" << endl;
@@ -203,19 +222,17 @@ int main()
             }
         }
         else if (lowerInput == "clear list" || lowerInput == "reset list") {
-            tasks.clear(); // Wipes vector bounds entirely
+            tasks.clear(); 
             saveTasksToFile(); 
             cout << "Assistant: The task list has been wiped clean from storage!" << endl;
         }
 
-        // --- 6. Memory & Facts ---
-        else if (lowerInput.find("remember") != string::npos)
-        {
+        // --- 6. Memory Backup & Facts ---
+        else if (lowerInput.find("remember") != string::npos) {
             string info = input.substr(9); 
             cout << "Assistant: I have noted: '" << info << "'! 🧠" << endl;
         }
-        else if (lowerInput == "fact" || lowerInput == "tech")
-        {
+        else if (lowerInput == "fact" || lowerInput == "tech") {
             string facts[] = {
                 "The first computer virus was created in 1971! 🦠",
                 "C++ was created by Bjarne Stroustrup! 👨‍💻",
@@ -226,7 +243,7 @@ int main()
             cout << "Assistant: Did you know? " << facts[factIndex] << endl;
         }
 
-        // --- 7. Smart Search Logic ---
+        // --- 7. Smart Internet Automation ---
         else if (lowerInput.find("search for") != string::npos) {
             string query = input.substr(11); 
             cout << "Assistant: Certainly Karthikeyan, searching Google for '" << query << "'... 🌐" << endl;
@@ -235,9 +252,8 @@ int main()
             system(command.c_str());
         }
 
-        // --- 8. Professional Shortcuts & Hubs ---
-        else if (lowerInput == "github" || lowerInput == "git")  
-        {
+        // --- 8. Workspace Environment Hubs ---
+        else if (lowerInput == "github" || lowerInput == "git") {
             cout << "Assistant: Opening GitHub... 🚀" << endl;
             system("am start -a android.intent.action.VIEW -d https://github.com/rushsvanth-cmyk");
         }
@@ -245,10 +261,9 @@ int main()
             cout << "Assistant: Connecting to Tesla Engineering Careers dashboard, Karthikeyan... 🏎️⚡" << endl;
             system("am start -a android.intent.action.VIEW -d https://www.tesla.com/careers");
         }
-        else if (lowerInput == "status")
-        {
+        else if (lowerInput == "status") {
             cout << "\n--- Assistant Status ---" << endl;
-            cout << "Version: 5.2 | Architecture: Dynamic Vector Containers | Core Target: Tesla Architect 🏎️" << endl;
+            cout << "Version: 5.3 | System Infrastructure: Object-Oriented Architecture (OOP)" << endl;
             cout << "Total Tracked Tasks Stored: " << tasks.size() << " items" << endl;
             cout << "------------------------" << endl;
         }
@@ -256,7 +271,7 @@ int main()
             cout << "Assistant: Karthikeyan is a future Tesla Engineer! He is currently building me—his advanced virtual assistant. 🔥" << endl;
         }
         
-        // --- 9. System Performance Metric ---
+        // --- 9. System Metrics ---
         else if (lowerInput == "system speed" || lowerInput == "latency") {
             auto end_time = chrono::high_resolution_clock::now();
             auto duration = chrono::duration_cast<chrono::microseconds>(end_time - start_time).count();
@@ -264,8 +279,7 @@ int main()
         }
 
         // --- Default Response ---
-        else 
-        {
+        else {
             cout << "Assistant: I didn't quite catch that. Try 'hi', 'status', or check your 'list'!" << endl;
         }
     } 
