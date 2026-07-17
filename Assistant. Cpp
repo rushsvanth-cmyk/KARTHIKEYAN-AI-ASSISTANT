@@ -10,26 +10,53 @@
 #include <vector> 
 #include <stdexcept> 
 #include <thread> 
+#include <set> // [NEW] Used for highly optimized O(1) stop-word filtering
 
 using namespace std;
 
 // ============================================================================
+// --- [NEW] NLP PARSER & INTERACTION ENGINE ---
+// ============================================================================
+// Tokenizes input text, filters out grammatical noise, and checks for keyword matches
+bool dynamicIntentMatch(const string& rawInput, const vector<string>& targetKeywords) {
+    string processed = rawInput;
+    transform(processed.begin(), processed.end(), processed.begin(), [](unsigned char c){ return tolower(c); });
+
+    // Clean up punctuation marks to isolate pure tokens
+    for (char &c : processed) {
+        if (c == '?' || c == '!' || c == '.' || c == ',') c = ' ';
+    }
+
+    // Stop-words list (words to ignore so the system focuses only on intent)
+    static const set<string> stopWords = {"please", "can", "you", "the", "a", "an", "is", "me", "my", "show", "tell", "check"};
+
+    stringstream ss(processed);
+    string token;
+    
+    // Check if any extracted keyword matches our intent targets
+    while (ss >> token) {
+        if (stopWords.find(token) != stopWords.end()) continue; // Skip noise words
+        
+        for (const string& keyword : targetKeywords) {
+            if (token == keyword) return true;
+        }
+    }
+    return false;
+}
+
+// ============================================================================
 // --- SECURITY SYSTEM: CRYPTOGRAPHIC ACCESS CONTROL LAYER ---
 // ============================================================================
-// Calculates a simple polynomial rolling hash string to match verification signatures
 unsigned long long calculateSecureHash(const string& password) {
-    unsigned long long hashValue = 5381; // Standard cryptographic constant base seed
+    unsigned long long hashValue = 5381; 
     for (char c : password) {
-        // Bitwise shifting multiplication trick: hash * 33 + char
         hashValue = ((hashValue << 5) + hashValue) + c;
     }
     return hashValue;
 }
 
-// Enforces secure system authorization layer
 bool authenticateUser() {
-    // Expected pre-computed hash signature value for password: "tesla"
-    const unsigned long long EXPECTED_SIGNATURE = 227560592079ULL;
+    const unsigned long long EXPECTED_SIGNATURE = 227560592079ULL; // "tesla"
     string inputKey;
     int attemptsLeft = 3;
 
@@ -39,9 +66,6 @@ bool authenticateUser() {
 
     while (attemptsLeft > 0) {
         cout << "Enter Access Keycode to Initialize Kernel (" << attemptsLeft << " attempts remaining): ";
-        
-        // Disabling terminal character echoing isn't cross-platform in standard C++, 
-        // so we cleanly read using mask input guidelines.
         getline(cin, inputKey);
 
         if (calculateSecureHash(inputKey) == EXPECTED_SIGNATURE) {
@@ -150,9 +174,8 @@ void loadTasksFromFile() {
 // ============================================================================
 int main() 
 {
-    // Execute Security Intercept layer before initializing program pipelines
     if (!authenticateUser()) {
-        return 1; // Terminate with standard application error signal code
+        return 1; 
     }
 
     string input;
@@ -162,8 +185,8 @@ int main()
     TeslaBatteryManager bmsModule;
     loadTasksFromFile();
 
-    cout << "\n--- System Online (V5.6 - Authenticated Kernel Engine) ---" << endl;
-    cout << "(Commands: hi, status, ev health, remind me at, add task, remove task, list, exit)" << endl;
+    cout << "\n--- System Online (V5.7 - Intelligent Intent Parsing) ---" << endl;
+    cout << "(Try talking naturally: 'Hey can you check my battery status?', 'show tasks', etc.)" << endl;
 
     while (true)
     {
@@ -199,25 +222,25 @@ int main()
         string lowerInput = input;
         transform(lowerInput.begin(), lowerInput.end(), lowerInput.begin(), [](unsigned char c){ return tolower(c); });
 
-        // --- 2. System Routines ---
+        // --- 2. System Routines & NLP Mapped Commands ---
         if (lowerInput == "exit" || lowerInput == "quit") {
             cout << "Assistant: Goodbye! Have a wonderful day. 🫂" << endl;
             break;
         }
-        else if (lowerInput == "who is your owner" || lowerInput == "owner") {
+        else if (dynamicIntentMatch(input, {"owner", "creator"})) {
             cout << "Assistant: I was developed and built by Karthikeyan. 🛠️" << endl;
         }
-        else if (lowerInput == "date" || lowerInput == "time") {
+        else if (dynamicIntentMatch(input, {"date", "time", "clock"})) {
             time_t now = time(0);
             char* dt = ctime(&now);
             cout << "Assistant: " << dt;
         }
-        else if (lowerInput == "hi" || lowerInput == "hello") {
+        else if (dynamicIntentMatch(input, {"hi", "hello", "hey"})) {
             cout << "Assistant: Hello! I am your virtual assistant. How can I help you today?" << endl;
         }
 
-        // --- 3. EV Battery Health Module ---
-        else if (lowerInput == "battery" || lowerInput == "range" || lowerInput == "ev health") 
+        // --- 3. EV Battery Health Module (Flexible Querying) ---
+        else if (dynamicIntentMatch(input, {"battery", "range", "ev", "bms"})) 
         {
             double pct, cycles;
             cout << "Assistant: What is your current battery percentage (0-100)? ";
@@ -248,8 +271,8 @@ int main()
             reminderThread.detach(); 
         }
 
-        // --- 5. Success Task Lists ---
-        else if (lowerInput == "add task") {
+        // --- 5. Success Task Lists (Flexible Querying) ---
+        else if (lowerInput == "add task" || dynamicIntentMatch(input, {"create-task"})) {
             cout << "Assistant: Task to add: ";
             string newTask;
             getline(cin, newTask);
@@ -257,7 +280,7 @@ int main()
             saveTasksToFile(); 
             cout << "Assistant: Added and saved to memory. ✅" << endl;
         }
-        else if (lowerInput == "list" || lowerInput == "tasks") {
+        else if (dynamicIntentMatch(input, {"list", "tasks", "workload"})) {
             cout << "\n--- Your Success Task List ---" << endl;
             if (tasks.empty()) cout << "No tasks yet. ✨" << endl;
             else {
@@ -289,7 +312,7 @@ int main()
                 }
             }
         }
-        else if (lowerInput == "clear list" || lowerInput == "reset list") {
+        else if (dynamicIntentMatch(input, {"clear", "reset"}) && dynamicIntentMatch(input, {"list", "tasks"})) {
             tasks.clear(); 
             saveTasksToFile(); 
             cout << "Assistant: The task list has been wiped clean!" << endl;
@@ -300,10 +323,10 @@ int main()
             string info = input.substr(9); 
             cout << "Assistant: I have noted: '" << info << "'! 🧠" << endl;
         }
-        else if (lowerInput == "fact" || lowerInput == "tech") {
+        else if (dynamicIntentMatch(input, {"fact", "tech", "trivia"})) {
             string facts[] = {
                 "The first computer virus was created in 1971! 🦠",
-                "C++ was created by Bjarne Stroustrup! 👨 toggle 👨‍💻",
+                "C++ was created by Bjarne Stroustrup! 👨‍💻",
                 "The first programmer was Ada Lovelace! 👩‍💻",
                 "Tesla car software runs on Linux! 🏎️"
             };
@@ -321,17 +344,17 @@ int main()
         }
 
         // --- 8. Workspace Environment Hubs ---
-        else if (lowerInput == "github" || lowerInput == "git") {
+        else if (dynamicIntentMatch(input, {"github", "git"})) {
             cout << "Assistant: Opening GitHub... 🚀" << endl;
             system("am start -a android.intent.action.VIEW -d https://github.com/rushsvanth-cmyk");
         }
-        else if (lowerInput == "tesla hub" || lowerInput == "tesla careers") {
+        else if (dynamicIntentMatch(input, {"tesla"}) && dynamicIntentMatch(input, {"hub", "careers", "jobs"})) {
             cout << "Assistant: Connecting to Tesla Engineering Careers dashboard... 🏎️⚡" << endl;
             system("am start -a android.intent.action.VIEW -d https://www.tesla.com/careers");
         }
         else if (lowerInput == "status") {
             cout << "\n--- Assistant Status ---" << endl;
-            cout << "Version: 5.6 | Authentication: Polynomial Rolling Hash Verified | Status: High Integrity" << endl;
+            cout << "Version: 5.7 | Intent Parser: Tokenized NLP Filter Enabled" << endl;
             cout << "Total Tracked Tasks Stored: " << tasks.size() << " items" << endl;
             cout << "------------------------" << endl;
         }
@@ -340,7 +363,7 @@ int main()
         }
         
         // --- 9. System Metrics ---
-        else if (lowerInput == "system speed" || lowerInput == "latency") {
+        else if (dynamicIntentMatch(input, {"speed", "latency", "performance"})) {
             auto end_time = chrono::high_resolution_clock::now();
             auto duration = chrono::duration_cast<chrono::microseconds>(end_time - start_time).count();
             cout << "Assistant: Internal engine latency check: " << duration << " microseconds. Running smoothly! ⚡" << endl;
@@ -348,7 +371,7 @@ int main()
 
         // --- Default Response ---
         else {
-            cout << "Assistant: I didn't quite catch that. Try 'hi', 'status', or check your 'list'!" << endl;
+            cout << "Assistant: I didn't quite catch that. Try speaking naturally or ask for 'status'!" << endl;
         }
     } 
 
