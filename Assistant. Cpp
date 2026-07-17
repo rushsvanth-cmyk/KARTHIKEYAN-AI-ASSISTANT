@@ -15,88 +15,51 @@
 
 using namespace std;
 
-// Structure for telemetry framing
-struct TeslaTelemetry {
+// ============================================================================
+// --- COMPONENT 1: NATURAL LANGUAGE PROCESSING & PARSER ENGINE ---
+// ============================================================================
+class NLPCommandParser {
+private:
+    set<string> stopWords;
+
+public:
+    NLPCommandParser() {
+        // Initialize noise words to clear vocabulary channels
+        stopWords = {"please", "can", "you", "the", "a", "an", "is", "me", "my", "show", "tell", "check", "hey"};
+    }
+
+    bool parseIntent(const string& rawInput, const vector<string>& targetKeywords) const {
+        string processed = rawInput;
+        transform(processed.begin(), processed.end(), processed.begin(), [](unsigned char c){ return tolower(c); });
+        
+        // Sanitize punctuation
+        for (char &charByte : processed) {
+            if (charByte == '?' || charByte == '!' || charByte == '.' || charByte == ',') charByte = ' ';
+        }
+
+        stringstream stream(processed);
+        string token;
+        
+        while (stream >> token) {
+            if (stopWords.find(token) != stopWords.end()) continue; // Skip noise tokens
+            for (const string& keyword : targetKeywords) {
+                if (token == keyword) return true;
+            }
+        }
+        return false;
+    }
+};
+
+// ============================================================================
+// --- COMPONENT 2: VEHICLE SOFTWARE & TELEMETRY CONTROLLER ---
+// ============================================================================
+struct TelemetryFrame {
     double stockPrice;
     string marketStatus;
     unsigned long long marketCap;
 };
 
-// ============================================================================
-// --- [NEW] DATA SERIALIZATION CORE (JSON LAYER) ---
-// ============================================================================
-// Creates a clean, formatted JSON data frame from program vectors and metrics
-string serializeSystemStateToJSON(const vector<string>& currentTasks, int latency) {
-    stringstream json;
-    json << "{\n";
-    json << "  \"kernel_version\": \"5.9\",\n";
-    json << "  \"system_latency_us\": " << latency << ",\n";
-    json << "  \"tasks\": [\n";
-    
-    for (size_t i = 0; i < currentTasks.size(); ++i) {
-        // Escaping strings safely inside JSON arrays
-        json << "    \"" << currentTasks[i] << "\"";
-        if (i + 1 < currentTasks.size()) json << ",";
-        json << "\n";
-    }
-    
-    json << "  ]\n";
-    json << "}";
-    return json.str();
-}
-
-// Custom manual JSON parser to extract a string value by its key matching bounds
-string extractJSONStringValue(const string& json, const string& key) {
-    string targetKey = "\"" + key + "\"";
-    size_t keyPos = json.find(targetKey);
-    if (keyPos == string::npos) return "NOT_FOUND";
-
-    // Advance past the key string and look for the assignment delimiter ':'
-    size_t colonPos = json.find(":", keyPos);
-    if (colonPos == string::npos) return "PARSE_ERROR";
-
-    // Locate the value wrapped inside quotes post assignment colon
-    size_t startQuote = json.find("\"", colonPos);
-    size_t endQuote = json.find("\"", startQuote + 1);
-    
-    if (startQuote == string::npos || endQuote == string::npos) return "PARSE_ERROR";
-    return json.substr(startQuote + 1, endQuote - startQuote - 1);
-}
-
-// ============================================================================
-// --- TELEMETRY ENGINE LAYER ---
-// ============================================================================
-TeslaTelemetry fetchLiveTeslaTelemetry() {
-    sleep(2); 
-    TeslaTelemetry currentData;
-    // Contextual data matrix frames updated for mid-2026 trading sessions
-    currentData.stockPrice = 382.67; 
-    currentData.marketStatus = "Active Operational";
-    currentData.marketCap = 1199460625571ULL; 
-    return currentData;
-}
-
-void backgroundReminder(string alarmTime) {
-    bool reminded = false;
-    while (!reminded) {
-        time_t now = time(0);
-        tm *ltm = localtime(&now);
-        char currentTime[6];
-        strftime(currentTime, sizeof(currentTime), "%H:%M", ltm);
-        
-        if (string(currentTime) == alarmTime) {
-            cout << "\n\n[BACKGROUND ALERT] 🔔 Karthikeyan, it is " << alarmTime << "! Time to work!" << endl;
-            cout << "You: " << flush;
-            reminded = true;
-        }
-        sleep(20); 
-    }
-}
-
-// ============================================================================
-// --- TESLA BATTERY MANAGEMENT SYSTEM CLASS (OOP) ---
-// ============================================================================
-class TeslaBatteryManager {
+class TeslaVehicleController {
 private:
     double batteryPercent;
     double totalCycles;
@@ -107,298 +70,276 @@ private:
         return (health < 70.0) ? 70.0 : health; 
     }
 
-public:
-    TeslaBatteryManager() : batteryPercent(100.0), totalCycles(0) {}
-
-    void setDiagnostics(double percent, double cycles) {
-        if (percent < 0.0 || percent > 100.0) {
-            throw invalid_argument("State of Charge outside physical parameters (0-100%).");
-        }
-        if (cycles < 0.0) {
-            throw invalid_argument("Negative cycle matrix data rejected by BMS.");
-        }
-        batteryPercent = percent;
-        totalCycles = cycles;
+    // Parallel Background Thread Worker Target for Network Telemetry Sim
+    static TelemetryFrame queryCloudTelemetryNode() {
+        sleep(2); // Simulated latency delay
+        TelemetryFrame packet;
+        packet.stockPrice = 382.82; // Real-world data point tracking
+        packet.marketStatus = "Active / Nominal Operational Loop";
+        packet.marketCap = 1199678748284ULL; // ~1.19 Trillion capitalization frame
+        return packet;
     }
 
-    void displayHealthReport() const {
-        double soh = calculateStateOfHealth();
-        double maxRangePossible = baselineRange * (soh / 100.0);
-        double currentRange = maxRangePossible * (batteryPercent / 100.0);
+public:
+    TeslaVehicleController() : batteryPercent(100.0), totalCycles(0) {}
 
-        cout << "\n--- EV Pack Diagnostic Status [BMS Class] ---" << endl;
-        cout << "System Status               : Online & Monitoring" << endl;
-        cout << "Battery State of Health(SoH): " << soh << "%" << endl;
-        cout << "Target Adaptive Range       : " << currentRange << " KM 🚗🔋" << endl;
-        cout << "---------------------------------------------" << endl;
+    void executeBMSDiagnostics() {
+        cout << "Assistant: What is your current battery percentage (0-100)? ";
+        if (!(cin >> batteryPercent)) throw runtime_error("Invalid data type configuration.");
+        cout << "Assistant: Total charging cycles on the pack? ";
+        if (!(cin >> totalCycles)) throw runtime_error("Invalid data type configuration.");
+        cin.ignore(1000, '\n'); 
+
+        if (batteryPercent < 0.0 || batteryPercent > 100.0 || totalCycles < 0.0) {
+            throw invalid_argument("Telemetry metrics fall outside nominal boundaries.");
+        }
+
+        double soh = calculateStateOfHealth();
+        double currentRange = (baselineRange * (soh / 100.0)) * (batteryPercent / 100.0);
+
+        cout << "\n--- EV Pack Diagnostic Status [BMS Component] ---" << endl;
+        cout << "Battery State of Health (SoH): " << soh << "%" << endl;
+        cout << "Target Adaptive Range        : " << currentRange << " KM 🚗🔋" << endl;
+        cout << "-------------------------------------------------" << endl;
+    }
+
+    void streamLiveCloudTelemetry() const {
+        cout << "Assistant: Launching async network telemetry probe... 📡" << endl;
+        future<TelemetryFrame> responsePipeline = async(launch::async, queryCloudTelemetryNode);
+        
+        while(responsePipeline.wait_for(chrono::milliseconds(400)) != future_status::ready) {
+            cout << "[System Bus: Pinging Cloud Server Matrix...]" << endl;
+        }
+        
+        TelemetryFrame cloudData = responsePipeline.get();
+        cout << "\n--- Async Telemetry Stream ($TSLA) ---" << endl;
+        cout << "Spot Trading Target : $" << cloudData.stockPrice << " USD" << endl;
+        cout << "Network Registry    : " << cloudData.marketStatus << endl;
+        cout << "Total Valuation Cap : $" << cloudData.marketCap << " Valuation" << endl;
+        cout << "----------------------------------------" << endl;
     }
 };
 
 // ============================================================================
-// --- NLP PARSER CORE ---
+// --- COMPONENT 3: PERSISTENT MEMORY & TASK STORAGE CONTROLLER ---
 // ============================================================================
-bool dynamicIntentMatch(const string& rawInput, const vector<string>& targetKeywords) {
-    string processed = rawInput;
-    transform(processed.begin(), processed.end(), processed.begin(), [](unsigned char c){ return tolower(c); });
-    for (char &c : processed) {
-        if (c == '?' || c == '!' || c == '.' || c == ',') c = ' ';
-    }
-    static const set<string> stopWords = {"please", "can", "you", "the", "a", "an", "is", "me", "my", "show", "tell", "check"};
-    stringstream ss(processed);
-    string token;
-    while (ss >> token) {
-        if (stopWords.find(token) != stopWords.end()) continue;
-        for (const string& keyword : targetKeywords) {
-            if (token == keyword) return true;
+class TaskMemoryController {
+private:
+    string storageFileName;
+    vector<string> dataVector;
+
+public:
+    TaskMemoryController(string filename) : storageFileName(filename) {}
+
+    void commitStorageToDisk() const {
+        ofstream file(storageFileName);
+        if (file.is_open()) {
+            for (const string& entry : dataVector) file << entry << endl;
+            file.close();
         }
     }
-    return false;
-}
 
-const string FILE_NAME = "tasks.txt";
-static vector<string> tasks; 
-
-void saveTasksToFile() {
-    ofstream outFile(FILE_NAME);
-    if (outFile.is_open()) {
-        for (const string& task : tasks) outFile << task << endl;
-        outFile.close();
-    }
-}
-
-void loadTasksFromFile() {
-    ifstream inFile(FILE_NAME);
-    if (inFile.is_open()) {
-        string task;
-        tasks.clear(); 
-        while (getline(inFile, task)) {
-            if (!task.empty()) tasks.push_back(task);
+    void loadStorageFromDisk() {
+        ifstream file(storageFileName);
+        if (file.is_open()) {
+            string currentLine;
+            dataVector.clear();
+            while (getline(file, currentLine)) {
+                if (!currentLine.empty()) dataVector.push_back(currentLine);
+            }
+            file.close();
         }
-        inFile.close();
+    }
+
+    void addNewTask() {
+        cout << "Assistant: Task description to add: ";
+        string description;
+        getline(cin, description);
+        dataVector.push_back(description);
+        commitStorageToDisk();
+        cout << "Assistant: Entry saved dynamically. ✅" << endl;
+    }
+
+    void displayActiveWorkload() const {
+        cout << "\n--- Your Success Task List ---" << endl;
+        if (dataVector.empty()) cout << "No tasks populated. ✨" << endl;
+        else {
+            for (size_t i = 0; i < dataVector.size(); ++i) {
+                cout << i + 1 << ". " << dataVector[i] << endl;
+            }
+        }
+    }
+
+    void purgeTaskElement() {
+        if (dataVector.empty()) {
+            cout << "Assistant: Data registers empty." << endl;
+            return;
+        }
+        int index;
+        cout << "Assistant: Enter element sequence address to purge (1-" << dataVector.size() << "): ";
+        if (!(cin >> index)) throw runtime_error("Target conversion index fault.");
+        cin.ignore(1000, '\n');
+
+        if (index < 1 || index > static_cast<int>(dataVector.size())) {
+            throw out_of_range("Memory matrix boundary fault.");
+        }
+        dataVector.erase(dataVector.begin() + (index - 1));
+        commitStorageToDisk();
+        cout << "Assistant: Task element erased. 🗑️" << endl;
+    }
+
+    void wipeMemoryBank() {
+        dataVector.clear();
+        commitStorageToDisk();
+        cout << "Assistant: Persistent workload wiped cleanly." << endl;
+    }
+
+    size_t getVectorSize() const { return dataVector.size(); }
+    const vector<string>& getRawTasks() const { return dataVector; }
+};
+
+// Independent Global Thread Target Function
+void backgroundReminderThread(string TargetAlarm) {
+    while (true) {
+        time_t timestamp = time(0);
+        tm *localTime = localtime(&timestamp);
+        char registryBuffer[6];
+        strftime(registryBuffer, sizeof(registryBuffer), "%H:%M", localTime);
+        
+        if (string(registryBuffer) == TargetAlarm) {
+            cout << "\n\n[BACKGROUND ALERT] 🔔 Karthikeyan, it is " << TargetAlarm << "! Work session checkpoint active!" << endl;
+            cout << "You: " << flush;
+            break;
+        }
+        sleep(20); 
     }
 }
 
 // ============================================================================
-// --- MAIN PROGRAM PIPELINE ---
+// --- MAIN EXECUTIVE ROUTINE HUB ---
 // ============================================================================
 int main() 
 {
-    string input;
-    double num1, num2;
-    char op;
-    int lastMeasuredLatency = 42; // Default starting metric
+    // Instantiate Modular Controller Components
+    NLPCommandParser nlpEngine;
+    TeslaVehicleController powertrainModule;
+    TaskMemoryController diskMemory("tasks.txt");
 
-    TeslaBatteryManager bmsModule;
-    loadTasksFromFile();
+    string rawInput;
+    int systemLatencyRegister = 12;
 
-    cout << "\n--- System Online (V5.9 - Serialized JSON Pipeline) ---" << endl;
-    cout << "(Commands: export json, parse packet, live tsla, ev health, exit)" << endl;
+    diskMemory.loadStorageFromDisk();
+
+    cout << "====================================================================" << endl;
+    cout << "--- SYSTEM ONLINE: ARCHITECTURE VERSION 6.0 (ENTERPRISE EDITION) ---" << endl;
+    cout << "====================================================================" << endl;
+    cout << "Systems status: Fully Modularized Controller Architecture Operational." << endl;
 
     while (true)
     {
         cout << "\nYou: ";
-        getline(cin, input);
+        getline(cin, rawInput);
+        if (rawInput.empty()) continue;
 
-        if (input.empty()) continue;
+        auto tickerStart = chrono::high_resolution_clock::now();
+        string lowerCaseInput = rawInput;
+        transform(lowerCaseInput.begin(), lowerCaseInput.end(), lowerCaseInput.begin(), [](unsigned char c){ return tolower(c); });
 
-        auto start_time = chrono::high_resolution_clock::now();
-
-        // --- Automatic Math Detection ---
-        if (isdigit(input[0])) 
-        {
-            stringstream ss(input);
-            if (ss >> num1 >> op >> num2) {
-                cout << "Assistant (Math): ";
-                switch(op) {
-                    case '+': cout << num1 + num2 << " ✅"; break;
-                    case '-': cout << num1 - num2 << " ✅"; break;
-                    case '*': cout << num1 * num2 << " ✅"; break;
-                    case '/': 
-                        if(num2 != 0) cout << num1 / num2 << " ✅";
-                        else cout << "Error: Cannot divide by zero! ❌";
-                        break;
-                    case '^': cout << pow(num1, num2) << " 🔥"; break;
-                    default: cout << "Unknown operator! 😅";
+        // Math Interpreter Pipeline Redirect
+        if (isdigit(rawInput[0])) {
+            double value1, value2; char sign;
+            stringstream expressionStream(rawInput);
+            if (expressionStream >> value1 >> sign >> value2) {
+                cout << "Assistant (Math Logic Component): ";
+                switch(sign) {
+                    case '+': cout << value1 + value2 << " ✅"; break;
+                    case '-': cout << value1 - value2 << " ✅"; break;
+                    case '*': cout << value1 * value2 << " ✅"; break;
+                    case '/': (value2 != 0) ? cout << value1 / value2 << " ✅" : cout << "Division error. ❌"; break;
+                    case '^': cout << pow(value1, value2) << " 🔥"; break;
+                    default: cout << "Unknown operator map context.";
                 }
                 cout << endl;
-                continue; 
+                continue;
             }
         }
 
-        string lowerInput = input;
-        transform(lowerInput.begin(), lowerInput.end(), lowerInput.begin(), [](unsigned char c){ return tolower(c); });
-
-        if (lowerInput == "exit" || lowerInput == "quit") {
-            cout << "Assistant: Goodbye! Have a wonderful day. 🫂" << endl;
+        // --- System Exit Logic Block ---
+        if (lowerCaseInput == "exit" || lowerCaseInput == "quit") {
+            cout << "Assistant: Core framework loop detached. Goodbye! 🫂" << endl;
             break;
         }
 
-        // --- [NEW] FEATURE: EXPORT DATA TO JSON STRING ---
-        else if (dynamicIntentMatch(input, {"export", "json"})) {
-            cout << "Assistant: Serializing operational registers to JSON structure format:\n" << endl;
-            string dynamicJSON = serializeSystemStateToJSON(tasks, lastMeasuredLatency);
-            cout << dynamicJSON << endl;
+        // --- Component Mapped Evaluation Branch Paths ---
+        else if (nlpEngine.parseIntent(rawInput, {"hi", "hello", "greet"})) {
+            cout << "Assistant: Greetings Karthikeyan. Modular hub controller components standing by." << endl;
         }
-
-        // --- [NEW] FEATURE: PARSE SERIALIZED JSON INPUT PACKETS ---
-        else if (lowerInput == "parse packet" || lowerInput == "parse json") {
-            // Mimicking an incoming network configuration configuration frame raw string
-            string testJSONPacket = "{\"device_id\": \"Tesla_BMS_Node_04\", \"firmware_status\": \"Fully Verified\", \"target_location\": \"Giga Texas\"}";
-            cout << "Assistant: Processing simulation data packet packet payload:\n" << testJSONPacket << endl;
-            
-            string devId = extractJSONStringValue(testJSONPacket, "device_id");
-            string fwStat = extractJSONStringValue(testJSONPacket, "firmware_status");
-            string loc = extractJSONStringValue(testJSONPacket, "target_location");
-
-            cout << "\n--- Deserialized Packet Tree Analysis ---" << endl;
-            cout << "Extracted Node ID      : " << devId << endl;
-            cout << "Extracted Status Signature: " << fwStat << endl;
-            cout << "Target Facility Target : " << loc << endl;
-            cout << "----------------------------------------" << endl;
-        }
-
-        // --- Asynchronous Telemetry Data Pipeline ---
-        else if (dynamicIntentMatch(input, {"tsla", "stock", "telemetry"})) {
-            cout << "Assistant: Spawning background worker to ping telemetry node... 📡" << endl;
-            future<TeslaTelemetry> telemetryFuture = async(launch::async, fetchLiveTeslaTelemetry);
-            cout << "Assistant: Awaiting data frame... Processing micro-cycles." << endl;
-            
-            while(telemetryFuture.wait_for(chrono::milliseconds(500)) != future_status::ready) {
-                cout << "[System Bus: Syncing Telemetry Packets...]" << endl;
-            }
-            
-            TeslaTelemetry liveFeed = telemetryFuture.get();
-            cout << "\n--- Live Onboard Data Stream ($TSLA) ---" << endl;
-            cout << "Market Spot Price  : $" << liveFeed.stockPrice << " USD" << endl;
-            cout << "Exchange Pipeline  : " << liveFeed.marketStatus << endl;
-            cout << "Corporate Valuation: $" << liveFeed.marketCap << " MarketCap" << endl;
-            cout << "----------------------------------------" << endl;
-        }
-
-        else if (dynamicIntentMatch(input, {"owner", "creator"})) {
-            cout << "Assistant: I was developed and built by Karthikeyan. 🛠️" << endl;
-        }
-        else if (dynamicIntentMatch(input, {"date", "time"})) {
-            time_t now = time(0);
-            char* dt = ctime(&now);
-            cout << "Assistant: " << dt;
-        }
-        else if (dynamicIntentMatch(input, {"hi", "hello"})) {
-            cout << "Assistant: Hello! How can I assist you today?" << endl;
-        }
-
-        // --- EV Battery Health Module ---
-        else if (dynamicIntentMatch(input, {"battery", "range", "ev", "bms"})) 
-        {
-            double pct, cycles;
-            cout << "Assistant: What is your current battery percentage (0-100)? ";
-            try {
-                if (!(cin >> pct)) throw runtime_error("Invalid data type.");
-                cout << "Assistant: Total charging cycles? ";
-                if (!(cin >> cycles)) throw runtime_error("Invalid data type.");
-                cin.ignore(1000, '\n'); 
-
-                bmsModule.setDiagnostics(pct, cycles);
-                bmsModule.displayHealthReport();
-            } 
-            catch (const exception& e) {
-                cout << "BMS Exception: " << e.what() << " ❌" << endl;
-                cin.clear();            
-                cin.ignore(1000, '\n'); 
+        else if (nlpEngine.parseIntent(rawInput, {"battery", "range", "ev", "bms", "health"})) {
+            try { powertrainModule.executeBMSDiagnostics(); }
+            catch (const exception& caughtError) {
+                cout << "BMS Failure Resolution Catch: " << caughtError.what() << " ❌" << endl;
+                cin.clear(); cin.ignore(1000, '\n');
             }
         }
-
-        // --- Asynchronous Reminders ---
-        else if (lowerInput.find("remind me at") != string::npos) {
-            string alarmTime = lowerInput.substr(13); 
-            cout << "Assistant: Background thread activated for alarm at " << alarmTime << "! ⏰" << endl;
-            thread reminderThread(backgroundReminder, alarmTime);
-            reminderThread.detach(); 
+        else if (nlpEngine.parseIntent(rawInput, {"tsla", "stock", "telemetry"})) {
+            powertrainModule.streamLiveCloudTelemetry();
         }
-
-        // --- Success Task Lists ---
-        else if (lowerInput == "add task") {
-            cout << "Assistant: Task to add: ";
-            string newTask;
-            getline(cin, newTask);
-            tasks.push_back(newTask); 
-            saveTasksToFile(); 
-            cout << "Assistant: Task saved. ✅" << endl;
+        else if (lowerCaseInput == "add task" || nlpEngine.parseIntent(rawInput, {"create-task"})) {
+            diskMemory.addNewTask();
         }
-        else if (dynamicIntentMatch(input, {"list", "tasks"})) {
-            cout << "\n--- Your Success Task List ---" << endl;
-            if (tasks.empty()) cout << "No tasks yet. ✨" << endl;
-            else {
-                for (size_t i = 0; i < tasks.size(); i++) cout << i + 1 << ". " << tasks[i] << endl;
+        else if (nlpEngine.parseIntent(rawInput, {"list", "tasks", "workload"})) {
+            diskMemory.displayActiveWorkload();
+        }
+        else if (lowerCaseInput == "remove task" || lowerCaseInput == "delete task") {
+            try { diskMemory.purgeTaskElement(); }
+            catch(const exception& error) {
+                cout << "Data Stream Exception: " << error.what() << " ❌" << endl;
+                cin.clear(); cin.ignore(1000, '\n');
             }
         }
-        else if (lowerInput == "remove task" || lowerInput == "delete task") {
-            if (tasks.empty()) cout << "Assistant: Your list is empty!" << endl;
-            else {
-                int index;
-                cout << "Assistant: Enter index to remove: ";
-                try {
-                    if (!(cin >> index)) throw runtime_error("Must be integer.");
-                    cin.ignore(1000, '\n');
-                    if (index < 1 || index > static_cast<int>(tasks.size())) throw out_of_range("Index out of bounds.");
-                    tasks.erase(tasks.begin() + (index - 1));
-                    saveTasksToFile(); 
-                    cout << "Assistant: Task removed! 🗑️" << endl;
-                }
-                catch (const exception& e) {
-                    cout << "Error: " << e.what() << " ❌" << endl;
-                    cin.clear(); cin.ignore(1000, '\n');
-                }
-            }
+        else if (nlpEngine.parseIntent(rawInput, {"clear", "reset"}) && nlpEngine.parseIntent(rawInput, {"list", "tasks"})) {
+            diskMemory.wipeMemoryBank();
         }
-
-        // --- Memory & Facts ---
-        else if (lowerInput.find("remember") != string::npos) {
-            string info = input.substr(9); 
-            cout << "Assistant: Noted: '" << info << "'! 🧠" << endl;
+        else if (lowerCaseInput.find("remind me at") != string::npos) {
+            string designatedTime = lowerCaseInput.substr(13);
+            cout << "Assistant: Separated background worker thread launched for target: " << designatedTime << " ⏰" << endl;
+            thread monitoringLane(backgroundReminderThread, designatedTime);
+            monitoringLane.detach();
         }
-        else if (dynamicIntentMatch(input, {"fact", "tech"})) {
-            string facts[] = {
-                "The first computer virus was created in 1971! 🦠",
-                "C++ was created by Bjarne Stroustrup! 👨‍💻",
-                "The first programmer was Ada Lovelace! 👩‍💻",
-                "Tesla car software runs on Linux! 🏎️"
-            };
-            cout << "Assistant: Did you know? " << facts[time(0) % 4] << endl;
+        else if (lowerCaseInput.find("search for") != string::npos) {
+            string extractionQuery = rawInput.substr(11);
+            cout << "Assistant: Tunneling Android system browser intent link for query: " << extractionQuery << " 🌐" << endl;
+            string assemblyURL = "https://www.google.com/search?q=" + extractionQuery;
+            string commandScript = "am start -a android.intent.action.VIEW -d \"" + assemblyURL + "\"";
+            system(commandScript.c_str());
         }
-
-        // --- Smart Internet Automation ---
-        else if (lowerInput.find("search for") != string::npos) {
-            string query = input.substr(11); 
-            cout << "Assistant: Searching Google for '" << query << "'... 🌐" << endl;
-            string url = "https://www.google.com/search?q=" + query;
-            string command = "am start -a android.intent.action.VIEW -d \"" + url + "\"";
-            system(command.c_str());
-        }
-
-        // --- Hubs & Shortcuts ---
-        else if (dynamicIntentMatch(input, {"github", "git"})) {
+        else if (nlpEngine.parseIntent(rawInput, {"github", "git"})) {
             system("am start -a android.intent.action.VIEW -d https://github.com/rushsvanth-cmyk");
         }
-        else if (dynamicIntentMatch(input, {"tesla"}) && dynamicIntentMatch(input, {"careers", "hub"})) {
+        else if (nlpEngine.parseIntent(rawInput, {"tesla"}) && nlpEngine.parseIntent(rawInput, {"careers", "hub"})) {
             system("am start -a android.intent.action.VIEW -d https://www.tesla.com/careers");
         }
-        else if (lowerInput == "status") {
-            cout << "\n--- Assistant Status ---" << endl;
-            cout << "Version: 5.9 | Serialization Module: Manual JSON Map Tree Engine Connected" << endl;
-            cout << "------------------------" << endl;
+        else if (lowerCaseInput == "status") {
+            cout << "\n--- Component Engine Diagnostic Status ---" << endl;
+            cout << "Framework Build : Version 6.0 Stable Architecture Matrix" << endl;
+            cout << "System Design   : Object-Oriented Interface Separation Patterns" << endl;
+            cout << "Active Workload : " << diskMemory.getVectorSize() << " Stored Cache Nodes" << endl;
+            cout << "------------------------------------------" << endl;
         }
-        else if (lowerInput == "who is karthikeyan") {
-            cout << "Assistant: Karthikeyan is a future Tesla Engineer! He is currently building me—his advanced virtual assistant. 🔥" << endl;
+        else if (lowerCaseInput == "who is karthikeyan") {
+            cout << "Assistant: Karthikeyan is a future Tesla Engineer! He designed this multi-threaded object-oriented software architecture. 🔥" << endl;
         }
-        
-        // --- Latency Logic Capture ---
-        auto end_time = chrono::high_resolution_clock::now();
-        lastMeasuredLatency = chrono::duration_cast<chrono::microseconds>(end_time - start_time).count();
-        
-        if (dynamicIntentMatch(input, {"speed", "latency"})) {
-            cout << "Assistant: Engine latency: " << lastMeasuredLatency << " microseconds. Running smoothly! ⚡" << endl;
+        else if (nlpEngine.parseIntent(rawInput, {"speed", "latency", "performance"})) {
+            cout << "Assistant: Internal bus transaction routing delay: " << systemLatencyRegister << " microseconds. Running smoothly! ⚡" << endl;
         }
-    } 
-    return 0; 
+        else {
+            cout << "Assistant: Request processed via fallback register. Try asking for 'status', 'live tsla', or 'ev health'!" << endl;
+        }
+
+        // Record execution clock metrics
+        auto tickerEnd = chrono::high_resolution_clock::now();
+        systemLatencyRegister = chrono::duration_cast<chrono::microseconds>(tickerEnd - tickerStart).count();
+    }
+
+    return 0;
 }
