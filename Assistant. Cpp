@@ -8,12 +8,35 @@
 #include <chrono> 
 #include <fstream> 
 #include <vector> 
-#include <stdexcept> // [NEW] Required for standard exception handling classes
+#include <stdexcept> 
+#include <thread> // [NEW] Required for Multi-threading / Parallel Processing
 
 using namespace std;
 
 // ============================================================================
-// --- TESLA BATTERY MANAGEMENT SYSTEM CLASS (OOP ENCAPSULATION) ---
+// --- BACKGROUND PROCESSES (MULTI-THREADING) ---
+// ============================================================================
+// [NEW] This function runs completely independently in the background
+void backgroundReminder(string alarmTime) {
+    bool reminded = false;
+    while (!reminded) {
+        time_t now = time(0);
+        tm *ltm = localtime(&now);
+        char currentTime[6];
+        strftime(currentTime, sizeof(currentTime), "%H:%M", ltm);
+        
+        if (string(currentTime) == alarmTime) {
+            // \a triggers a system beep on some consoles
+            cout << "\n\n[BACKGROUND ALERT] 🔔 Karthikeyan, it is " << alarmTime << "! Time to work!" << endl;
+            cout << "You: " << flush; // Restores the prompt visually
+            reminded = true;
+        }
+        sleep(20); // Check every 20 seconds instead of 2 to save CPU power
+    }
+}
+
+// ============================================================================
+// --- TESLA BATTERY MANAGEMENT SYSTEM CLASS (OOP) ---
 // ============================================================================
 class TeslaBatteryManager {
 private:
@@ -29,7 +52,6 @@ private:
 public:
     TeslaBatteryManager() : batteryPercent(100.0), totalCycles(0) {}
 
-    // [UPGRADED] Validates input rules and throws hardware runtime exceptions
     void setDiagnostics(double percent, double cycles) {
         if (percent < 0.0 || percent > 100.0) {
             throw invalid_argument("State of Charge outside physical parameters (0-100%).");
@@ -54,7 +76,9 @@ public:
     }
 };
 
-// Global File and Task configurations
+// ============================================================================
+// --- FILE SYSTEM CONFIGURATION ---
+// ============================================================================
 const string FILE_NAME = "tasks.txt";
 static vector<string> tasks; 
 
@@ -92,8 +116,8 @@ int main()
     TeslaBatteryManager bmsModule;
     loadTasksFromFile();
 
-    cout << "--- System Online (V5.4 - Crash Resilience Architecture) ---" << endl;
-    cout << "(Commands: hi, status, ev health, add task, remove task, list, exit)" << endl;
+    cout << "--- System Online (V5.5 - Asynchronous Core) ---" << endl;
+    cout << "(Commands: hi, status, ev health, remind me at, add task, remove task, list, exit)" << endl;
 
     while (true)
     {
@@ -146,51 +170,38 @@ int main()
             cout << "Assistant: Hello! I am your virtual assistant. How can I help you today?" << endl;
         }
 
-        // --- 3. [TRY-CATCH PROTECTED] EV Battery Health Module ---
+        // --- 3. EV Battery Health Module ---
         else if (lowerInput == "battery" || lowerInput == "range" || lowerInput == "ev health") 
         {
             double pct, cycles;
             cout << "Assistant: What is your current battery percentage (0-100)? ";
             
-            // Safety Wrapper Block
             try {
-                if (!(cin >> pct)) throw runtime_error("Invalid alphanumeric data type entered.");
+                if (!(cin >> pct)) throw runtime_error("Invalid data type entered.");
                 
                 cout << "Assistant: Total charging cycles on the battery pack? ";
-                if (!(cin >> cycles)) throw runtime_error("Invalid alphanumeric data type entered.");
+                if (!(cin >> cycles)) throw runtime_error("Invalid data type entered.");
                 cin.ignore(1000, '\n'); 
 
-                // Execute validated logic runtime
                 bmsModule.setDiagnostics(pct, cycles);
                 bmsModule.displayHealthReport();
             } 
-            // Catches argument boundary violations or bad stream data type data
             catch (const exception& e) {
                 cout << "BMS Failure Mitigation Hook: " << e.what() << " ❌" << endl;
-                cout << "Assistant: Recovering input registers... System status stabilized." << endl;
-                cin.clear();            // Clear stream error states
-                cin.ignore(1000, '\n'); // Purge corrupted bytes inside channel buffer
+                cin.clear();            
+                cin.ignore(1000, '\n'); 
             }
         }
 
-        // --- 4. Reminders ---
+        // --- 4. [UPGRADED] Asynchronous Reminders ---
         else if (lowerInput.find("remind me at") != string::npos) {
             string alarmTime = lowerInput.substr(13); 
-            cout << "Assistant: Noted. I'll remind you at " << alarmTime << "! ⏰" << endl;
+            cout << "Assistant: Background thread activated. I will remind you at " << alarmTime << " while you continue working! ⏰" << endl;
             
-            bool reminded = false;
-            while (!reminded) {
-                time_t now = time(0);
-                tm *ltm = localtime(&now);
-                char currentTime[6];
-                strftime(currentTime, sizeof(currentTime), "%H:%M", ltm);
-                
-                if (string(currentTime) == alarmTime) {
-                    cout << "\n[REMINDER] 🔔 It is " << alarmTime << "! Time to work!" << endl;
-                    reminded = true;
-                }
-                sleep(2); 
-            }
+            // Spawn a new independent thread for the reminder
+            thread reminderThread(backgroundReminder, alarmTime);
+            // Detach it from the main program so it runs silently in the background
+            reminderThread.detach(); 
         }
 
         // --- 5. Success Task Lists ---
@@ -200,7 +211,7 @@ int main()
             getline(cin, newTask);
             tasks.push_back(newTask); 
             saveTasksToFile(); 
-            cout << "Assistant: Added and saved to dynamic memory. ✅" << endl;
+            cout << "Assistant: Added and saved to memory. ✅" << endl;
         }
         else if (lowerInput == "list" || lowerInput == "tasks") {
             cout << "\n--- Your Success Task List ---" << endl;
@@ -209,7 +220,6 @@ int main()
                 for (size_t i = 0; i < tasks.size(); i++) cout << i + 1 << ". " << tasks[i] << endl;
             }
         }
-        // [TRY-CATCH PROTECTED] Index removal protection
         else if (lowerInput == "remove task" || lowerInput == "delete task") {
             if (tasks.empty()) {
                 cout << "Assistant: Your list is already empty!" << endl;
@@ -217,11 +227,11 @@ int main()
                 int index;
                 cout << "Assistant: Enter the task number to remove (1-" << tasks.size() << "): ";
                 try {
-                    if (!(cin >> index)) throw runtime_error("Task choice sequence must be integers.");
+                    if (!(cin >> index)) throw runtime_error("Must be an integer.");
                     cin.ignore(1000, '\n');
 
                     if (index < 1 || index > static_cast<int>(tasks.size())) {
-                        throw out_of_range("Requested element address index is out of array boundaries.");
+                        throw out_of_range("Task index out of bounds.");
                     }
 
                     tasks.erase(tasks.begin() + (index - 1));
@@ -238,7 +248,7 @@ int main()
         else if (lowerInput == "clear list" || lowerInput == "reset list") {
             tasks.clear(); 
             saveTasksToFile(); 
-            cout << "Assistant: The task list has been wiped clean from storage!" << endl;
+            cout << "Assistant: The task list has been wiped clean!" << endl;
         }
 
         // --- 6. Memory Backup & Facts ---
@@ -272,12 +282,12 @@ int main()
             system("am start -a android.intent.action.VIEW -d https://github.com/rushsvanth-cmyk");
         }
         else if (lowerInput == "tesla hub" || lowerInput == "tesla careers") {
-            cout << "Assistant: Connecting to Tesla Engineering Careers dashboard, Karthikeyan... 🏎️⚡" << endl;
+            cout << "Assistant: Connecting to Tesla Engineering Careers dashboard... 🏎️⚡" << endl;
             system("am start -a android.intent.action.VIEW -d https://www.tesla.com/careers");
         }
         else if (lowerInput == "status") {
             cout << "\n--- Assistant Status ---" << endl;
-            cout << "Version: 5.4 | Signal Integrity: Guardrail Exception Handlers Enabled" << endl;
+            cout << "Version: 5.5 | Architecture: Multi-Threaded Kernel" << endl;
             cout << "Total Tracked Tasks Stored: " << tasks.size() << " items" << endl;
             cout << "------------------------" << endl;
         }
