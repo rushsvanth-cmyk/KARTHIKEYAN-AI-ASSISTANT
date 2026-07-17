@@ -5,9 +5,42 @@
 #include <ctime>
 #include <sstream> 
 #include <unistd.h> 
-#include <chrono> // For high-precision system timing
+#include <chrono> 
+#include <fstream> // [NEW] Required for reading and writing files
 
 using namespace std;
+
+// File name for storage
+const string FILE_NAME = "tasks.txt";
+static string tasks[5]; 
+static int taskCount = 0;
+
+// [NEW] Function to save tasks to the phone storage
+void saveTasksToFile() {
+    ofstream outFile(FILE_NAME);
+    if (outFile.is_open()) {
+        for (int i = 0; i < taskCount; i++) {
+            outFile << tasks[i] << endl;
+        }
+        outFile.close();
+    }
+}
+
+// [NEW] Function to load tasks automatically when the program starts
+void loadTasksFromFile() {
+    ifstream inFile(FILE_NAME);
+    if (inFile.is_open()) {
+        string task;
+        taskCount = 0;
+        while (getline(inFile, task) && taskCount < 5) {
+            if (!task.empty()) {
+                tasks[taskCount] = task;
+                taskCount++;
+            }
+        }
+        inFile.close();
+    }
+}
 
 int main() 
 {
@@ -15,12 +48,14 @@ int main()
     double num1, num2;
     char op;
 
-    // Task List Storage
-    static string tasks[5]; 
-    static int taskCount = 0;
+    // Load saved data immediately on execution
+    loadTasksFromFile();
 
-    cout << "--- System Online (V5.0 - Ultimate System Edition) ---" << endl;
-    cout << "(Commands: hi, status, ev health, search for..., remove task, system speed, exit)" << endl;
+    cout << "--- System Online (V5.1 - Persistent Storage) ---" << endl;
+    cout << "(Commands: hi, status, ev health, add task, list, system speed, exit)" << endl;
+    if (taskCount > 0) {
+        cout << "Assistant: Welcome back Karthikeyan! Loaded " << taskCount << " active tasks from memory. 💾" << endl;
+    }
 
     while (true)
     {
@@ -29,7 +64,6 @@ int main()
 
         if (input.empty()) continue;
 
-        // Start timing the system response execution speed
         auto start_time = chrono::high_resolution_clock::now();
 
         // --- 1. Automatic Math Detection ---
@@ -56,7 +90,6 @@ int main()
             }
         }
 
-        // Convert input to lowercase for command matching
         string lowerInput = input;
         transform(lowerInput.begin(), lowerInput.end(), lowerInput.begin(), [](unsigned char c){ return tolower(c); });
 
@@ -81,7 +114,7 @@ int main()
             cout << "Assistant: Hello! I am your virtual assistant. How can I help you today?" << endl;
         }
 
-        // --- 3. [UPGRADED] Advanced EV Battery Health Logic ---
+        // --- 3. EV Battery Health Logic ---
         else if (lowerInput == "battery" || lowerInput == "range" || lowerInput == "ev health") 
         {
             double battery_percent;
@@ -95,21 +128,15 @@ int main()
 
             if (battery_percent >= 0 && battery_percent <= 100 && pack_cycles >= 0) 
             {
-                // Advanced Estimation Formula: Every 100 cycles causes roughly 0.5% battery degradation
                 double battery_health = 100.0 - (pack_cycles * 0.005);
-                if (battery_health < 70.0) battery_health = 70.0; // Dynamic floor limit
+                if (battery_health < 70.0) battery_health = 70.0; 
 
-                // Range baseline modified by State of Health (SoH)
                 double max_range_possible = 500.0 * (battery_health / 100.0);
                 double current_range = max_range_possible * (battery_percent / 100.0);
 
                 cout << "\n--- EV Pack Diagnostic Status ---" << endl;
                 cout << "Battery State of Health (SoH): " << battery_health << "%" << endl;
                 cout << "Estimated Current Range: " << current_range << " KM 🚗🔋" << endl;
-                
-                if (battery_health < 80.0) {
-                    cout << "Notice: High cycle count detected. Battery pack degradation visible. ⚠️" << endl;
-                }
             } 
             else cout << "Assistant: Invalid specifications entered. ❌" << endl;
         }
@@ -144,7 +171,8 @@ int main()
                 getline(cin, newTask);
                 tasks[taskCount] = newTask;
                 taskCount++;
-                cout << "Assistant: Added to list. ✅" << endl;
+                saveTasksToFile(); // [CHANGED] Save changes instantly
+                cout << "Assistant: Added and saved to memory. ✅" << endl;
             } else cout << "Assistant: List full! ❌" << endl;
         }
         else if (lowerInput == "list" || lowerInput == "tasks") {
@@ -168,13 +196,15 @@ int main()
                         tasks[i] = tasks[i + 1];
                     }
                     taskCount--;
-                    cout << "Assistant: Task #" << index << " removed successfully! 🗑️" << endl;
+                    saveTasksToFile(); // [CHANGED] Save updates to file
+                    cout << "Assistant: Task #" << index << " removed! 🗑️" << endl;
                 } else cout << "Assistant: Invalid task number! ❌" << endl;
             }
         }
         else if (lowerInput == "clear list" || lowerInput == "reset list") {
             taskCount = 0;
-            cout << "Assistant: The task list has been wiped clean!" << endl;
+            saveTasksToFile(); // [CHANGED] Wipe the text file clean
+            cout << "Assistant: The task list has been wiped clean from storage!" << endl;
         }
 
         // --- 6. Memory & Facts ---
@@ -217,7 +247,7 @@ int main()
         else if (lowerInput == "status")
         {
             cout << "\n--- Assistant Status ---" << endl;
-            cout << "Version: 5.0 | Kernel Status: Stable | Core Target: Tesla Architect 🏎️" << endl;
+            cout << "Version: 5.1 | Storage: Persistent | Target: Tesla Architect 🏎️" << endl;
             cout << "Active Tasks Stored: " << taskCount << "/5" << endl;
             cout << "------------------------" << endl;
         }
@@ -225,7 +255,7 @@ int main()
             cout << "Assistant: Karthikeyan is a future Tesla Engineer! He is currently building me—his advanced virtual assistant. 🔥" << endl;
         }
         
-        // --- 9. [NEW] System Performance Metric ---
+        // --- 9. System Performance Metric ---
         else if (lowerInput == "system speed" || lowerInput == "latency") {
             auto end_time = chrono::high_resolution_clock::now();
             auto duration = chrono::duration_cast<chrono::microseconds>(end_time - start_time).count();
@@ -235,7 +265,7 @@ int main()
         // --- Default Response ---
         else 
         {
-            cout << "Assistant: I didn't quite catch that. Try 'hi', 'status', 'ev health', or 'system speed'!" << endl;
+            cout << "Assistant: I didn't quite catch that. Try 'hi', 'status', or check your 'list'!" << endl;
         }
     } 
 
