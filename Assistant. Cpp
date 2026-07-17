@@ -11,11 +11,11 @@
 #include <stdexcept> 
 #include <thread> 
 #include <set> 
-#include <future> // [NEW] Required for handling asynchronous return states (Promises/Futures)
+#include <future> 
 
 using namespace std;
 
-// Structure to mimic incoming remote API json telemetry structures
+// Structure for telemetry framing
 struct TeslaTelemetry {
     double stockPrice;
     string marketStatus;
@@ -23,23 +23,59 @@ struct TeslaTelemetry {
 };
 
 // ============================================================================
+// --- [NEW] DATA SERIALIZATION CORE (JSON LAYER) ---
+// ============================================================================
+// Creates a clean, formatted JSON data frame from program vectors and metrics
+string serializeSystemStateToJSON(const vector<string>& currentTasks, int latency) {
+    stringstream json;
+    json << "{\n";
+    json << "  \"kernel_version\": \"5.9\",\n";
+    json << "  \"system_latency_us\": " << latency << ",\n";
+    json << "  \"tasks\": [\n";
+    
+    for (size_t i = 0; i < currentTasks.size(); ++i) {
+        // Escaping strings safely inside JSON arrays
+        json << "    \"" << currentTasks[i] << "\"";
+        if (i + 1 < currentTasks.size()) json << ",";
+        json << "\n";
+    }
+    
+    json << "  ]\n";
+    json << "}";
+    return json.str();
+}
+
+// Custom manual JSON parser to extract a string value by its key matching bounds
+string extractJSONStringValue(const string& json, const string& key) {
+    string targetKey = "\"" + key + "\"";
+    size_t keyPos = json.find(targetKey);
+    if (keyPos == string::npos) return "NOT_FOUND";
+
+    // Advance past the key string and look for the assignment delimiter ':'
+    size_t colonPos = json.find(":", keyPos);
+    if (colonPos == string::npos) return "PARSE_ERROR";
+
+    // Locate the value wrapped inside quotes post assignment colon
+    size_t startQuote = json.find("\"", colonPos);
+    size_t endQuote = json.find("\"", startQuote + 1);
+    
+    if (startQuote == string::npos || endQuote == string::npos) return "PARSE_ERROR";
+    return json.substr(startQuote + 1, endQuote - startQuote - 1);
+}
+
+// ============================================================================
 // --- TELEMETRY ENGINE LAYER ---
 // ============================================================================
-// Simulates an unblocked HTTP network request executing in a separate thread lane
 TeslaTelemetry fetchLiveTeslaTelemetry() {
-    // Simulating remote socket connection handshake network delay (3 seconds)
-    sleep(3); 
-    
+    sleep(2); 
     TeslaTelemetry currentData;
-    // Real-world context data points for mid-2026 trading matrices
-    currentData.stockPrice = 382.95; 
-    currentData.marketStatus = "Operational / Active";
-    currentData.marketCap = 1199492277749ULL; // ~1.19 Trillion valuation map
-    
+    // Contextual data matrix frames updated for mid-2026 trading sessions
+    currentData.stockPrice = 382.67; 
+    currentData.marketStatus = "Active Operational";
+    currentData.marketCap = 1199460625571ULL; 
     return currentData;
 }
 
-// Background thread process for independent task timers
 void backgroundReminder(string alarmTime) {
     bool reminded = false;
     while (!reminded) {
@@ -150,12 +186,13 @@ int main()
     string input;
     double num1, num2;
     char op;
+    int lastMeasuredLatency = 42; // Default starting metric
 
     TeslaBatteryManager bmsModule;
     loadTasksFromFile();
 
-    cout << "\n--- System Online (V5.8 - Telemetry Interface Kernel) ---" << endl;
-    cout << "(Commands: live tsla, ev health, search for..., list, exit)" << endl;
+    cout << "\n--- System Online (V5.9 - Serialized JSON Pipeline) ---" << endl;
+    cout << "(Commands: export json, parse packet, live tsla, ev health, exit)" << endl;
 
     while (true)
     {
@@ -191,27 +228,45 @@ int main()
         string lowerInput = input;
         transform(lowerInput.begin(), lowerInput.end(), lowerInput.begin(), [](unsigned char c){ return tolower(c); });
 
-        // --- System Routines ---
         if (lowerInput == "exit" || lowerInput == "quit") {
             cout << "Assistant: Goodbye! Have a wonderful day. 🫂" << endl;
             break;
         }
 
-        // --- [NEW] ASYNCHRONOUS DATA PIPELINE SHORTCUT ---
+        // --- [NEW] FEATURE: EXPORT DATA TO JSON STRING ---
+        else if (dynamicIntentMatch(input, {"export", "json"})) {
+            cout << "Assistant: Serializing operational registers to JSON structure format:\n" << endl;
+            string dynamicJSON = serializeSystemStateToJSON(tasks, lastMeasuredLatency);
+            cout << dynamicJSON << endl;
+        }
+
+        // --- [NEW] FEATURE: PARSE SERIALIZED JSON INPUT PACKETS ---
+        else if (lowerInput == "parse packet" || lowerInput == "parse json") {
+            // Mimicking an incoming network configuration configuration frame raw string
+            string testJSONPacket = "{\"device_id\": \"Tesla_BMS_Node_04\", \"firmware_status\": \"Fully Verified\", \"target_location\": \"Giga Texas\"}";
+            cout << "Assistant: Processing simulation data packet packet payload:\n" << testJSONPacket << endl;
+            
+            string devId = extractJSONStringValue(testJSONPacket, "device_id");
+            string fwStat = extractJSONStringValue(testJSONPacket, "firmware_status");
+            string loc = extractJSONStringValue(testJSONPacket, "target_location");
+
+            cout << "\n--- Deserialized Packet Tree Analysis ---" << endl;
+            cout << "Extracted Node ID      : " << devId << endl;
+            cout << "Extracted Status Signature: " << fwStat << endl;
+            cout << "Target Facility Target : " << loc << endl;
+            cout << "----------------------------------------" << endl;
+        }
+
+        // --- Asynchronous Telemetry Data Pipeline ---
         else if (dynamicIntentMatch(input, {"tsla", "stock", "telemetry"})) {
-            cout << "Assistant: Spawning unblocked background worker to ping telemetry node... 📡" << endl;
-            
-            // std::async runs the request function in a parallel runtime lane instantly
+            cout << "Assistant: Spawning background worker to ping telemetry node... 📡" << endl;
             future<TeslaTelemetry> telemetryFuture = async(launch::async, fetchLiveTeslaTelemetry);
+            cout << "Assistant: Awaiting data frame... Processing micro-cycles." << endl;
             
-            cout << "Assistant: While waiting for network packets, you can still chat! Processing..." << endl;
-            
-            // Loop checker allows you to process other micro-instructions while the socket waits
             while(telemetryFuture.wait_for(chrono::milliseconds(500)) != future_status::ready) {
-                cout << "[System Bus: Awaiting Telemetry Packets...]" << endl;
+                cout << "[System Bus: Syncing Telemetry Packets...]" << endl;
             }
             
-            // Collect return values from future registers securely
             TeslaTelemetry liveFeed = telemetryFuture.get();
             cout << "\n--- Live Onboard Data Stream ($TSLA) ---" << endl;
             cout << "Market Spot Price  : $" << liveFeed.stockPrice << " USD" << endl;
@@ -330,21 +385,19 @@ int main()
         }
         else if (lowerInput == "status") {
             cout << "\n--- Assistant Status ---" << endl;
-            cout << "Version: 5.8 | Core: Async Telemetry Framework (`std::future` Pipeline)" << endl;
+            cout << "Version: 5.9 | Serialization Module: Manual JSON Map Tree Engine Connected" << endl;
             cout << "------------------------" << endl;
         }
         else if (lowerInput == "who is karthikeyan") {
             cout << "Assistant: Karthikeyan is a future Tesla Engineer! He is currently building me—his advanced virtual assistant. 🔥" << endl;
         }
         
-        // --- Latency Check ---
-        else if (dynamicIntentMatch(input, {"speed", "latency"})) {
-            auto end_time = chrono::high_resolution_clock::now();
-            auto duration = chrono::duration_cast<chrono::microseconds>(end_time - start_time).count();
-            cout << "Assistant: Engine latency: " << duration << " microseconds. Running smoothly! ⚡" << endl;
-        }
-        else {
-            cout << "Assistant: Try 'live tsla', 'ev health', or check your 'list'!" << endl;
+        // --- Latency Logic Capture ---
+        auto end_time = chrono::high_resolution_clock::now();
+        lastMeasuredLatency = chrono::duration_cast<chrono::microseconds>(end_time - start_time).count();
+        
+        if (dynamicIntentMatch(input, {"speed", "latency"})) {
+            cout << "Assistant: Engine latency: " << lastMeasuredLatency << " microseconds. Running smoothly! ⚡" << endl;
         }
     } 
     return 0; 
