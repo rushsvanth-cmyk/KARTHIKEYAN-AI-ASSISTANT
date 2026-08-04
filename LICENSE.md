@@ -17,7 +17,7 @@ This software, firmware, and hardware logic are free to use, modify, and distrib
 ## 2. Commercial & Corporate Restriction (Paid / Royalty)
 Any use, integration, modification, or distribution of this code/hardware architecture by **Private Companies, Commercial Entities, or Corporate Corporations** is strictly prohibited without an explicit Commercial License from the author.
 
-* Commercial entities **MUST** obtain prior written approval and pay agreed royalty fees to **Karthikeyan / KKN Innovations**.
+* Commercial entities **MUST** obtain prior written approval and pay agreed royalty fees to **Karthikeyan / KN Innovations**.
 * Using this project in any closed-source commercial product without a license will lead to legal prosecution under Intellectual Property Rights (IPR).
 
 ---
