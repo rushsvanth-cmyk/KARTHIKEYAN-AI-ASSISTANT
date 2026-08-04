@@ -1,5 +1,5 @@
 # MGNK Open-Source Dual License Agreement
-**Project:** MIGNK Robotics (V1 & V2)
+**Project:** MGNK Robotics (V1 & V2)
 **Owner / Author:** Karthikeyan (KN Innovations)
 
 Copyright (c) 2026 Karthikeyan. All Rights Reserved.
