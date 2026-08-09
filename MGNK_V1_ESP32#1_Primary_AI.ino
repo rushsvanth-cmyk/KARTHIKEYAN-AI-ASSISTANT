@@ -1,18 +1,18 @@
 /*
   MGNK Robot V1 - ESP32 #1 (Main AI Brain)
-  Step 2: Wi-Fi + INMP441 I2S Microphone Setup
+  Step 3: Wi-Fi + INMP441 Mic + UART Serial Command System
   Developer: Karthikeyan Chairman
   Language: C++
 */
 
 #include <WiFi.h>
-#include <driver/i2s.h> // Header for Audio Input
+#include <driver/i2s.h> // Audio Input Header
 
 // Wi-Fi Credentials
 const char* ssid = "YOUR_WIFI_NAME";
 const char* password = "YOUR_WIFI_PASSWORD";
 
-// Serial Communication Pins for ESP32 #2
+// Hardware Serial 2 Pins for Communication with ESP32 #2
 #define RXD2 16
 #define TXD2 17
 
@@ -23,7 +23,6 @@ const char* password = "YOUR_WIFI_PASSWORD";
 #define I2S_PORT I2S_NUM_0
 
 void setupMicrophone() {
-  // Configures I2S for Audio Recording
   i2s_config_t i2s_config = {
     .mode = (i2s_mode_t)(I2S_MODE_MASTER | I2S_MODE_RX),
     .sample_rate = 16000,
@@ -49,25 +48,38 @@ void setupMicrophone() {
 }
 
 void setup() {
+  // Serial Monitor for Laptop Debugging
   Serial.begin(115200);
+  
+  // Serial2 for Communication with ESP32 #2 (Baud Rate: 115200)
   Serial2.begin(115200, SERIAL_8N1, RXD2, TXD2);
 
   Serial.println("MGNK V1 - ESP32 #1 System Initializing...");
 
-  // Setup Mic
+  // Setup Digital Microphone
   setupMicrophone();
 
-  // Connect Wi-Fi
+  // Connect to Wi-Fi
   WiFi.begin(ssid, password);
   while (WiFi.status() != WL_CONNECTED) {
     delay(500);
     Serial.print(".");
   }
-  Serial.println("\nWi-Fi Connected!");
+  Serial.println("\nWi-Fi Connected Successfully!");
 }
 
 void loop() {
-  // Mic is listening for speech...
-  Serial.println("ESP32 #1: Listening for Voice Input...");
-  delay(3000);
+  Serial.println("ESP32 #1: Active and Listening...");
+  
+  // Sending Command to ESP32 #2 via UART Serial2
+  Serial2.println("CMD_PLAY_WELCOME_AUDIO");
+  
+  // Checking response from ESP32 #2
+  if (Serial2.available()) {
+    String response = Serial2.readStringUntil('\n');
+    Serial.print("Response from ESP32 #2: ");
+    Serial.println(response);
+  }
+
+  delay(4000); // 4 Seconds Delay
 }
