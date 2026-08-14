@@ -17,7 +17,7 @@ const char* ssid = "YOUR_WIFI_NAME";
 const char* password = "YOUR_WIFI_PASSWORD";
 
 // Google Gemini API Key
-const char* gemini_api_key = "AIzaSyD-xxxxxx_உங்களிடன்_உள்ள_முழு_API_Key";
+const char* gemini_api_key = "AIzaSyD-xxxxxx_உங்களிடம்_உள்ள_முழு_API_Key";
 
 // Hardware Serial 2 Pins (Communicating with ESP32 #2 - Audio Engine)
 #define TXD2 17
@@ -35,14 +35,14 @@ void sendToGemini(String userQuery) {
     http.begin(url);
     http.addHeader("Content-Type", "application/json");
 
-    // Dynamic JSON Construction
-    StaticJsonDocument<512> doc;
-    JsonArray contents = doc.createNestedArray("contents");
-    JsonObject contentObj = contents.createNestedObject();
-    JsonArray parts = contentObj.createNestedArray("parts");
-    JsonObject partObj = parts.createNestedObject();
+    // Dynamic JSON Construction (Compatible with ArduinoJson v6 & v7)
+    JsonDocument doc;
+    JsonArray contents = doc["contents"].to<JsonArray>();
+    JsonObject contentObj = contents.add<JsonObject>();
+    JsonArray parts = contentObj["parts"].to<JsonArray>();
+    JsonObject partObj = parts.add<JsonObject>();
     
-    // Voice-optimized short response
+    // Voice-optimized short response in Tamil/English
     partObj["text"] = "Answer in 1 or 2 short sentences for voice output: " + userQuery;
 
     String requestBody;
@@ -53,16 +53,20 @@ void sendToGemini(String userQuery) {
     if (httpResponseCode > 0) {
       String response = http.getString();
       
-      StaticJsonDocument<1024> responseDoc;
+      JsonDocument responseDoc;
       DeserializationError error = deserializeJson(responseDoc, response);
 
       if (!error) {
-        String aiAnswer = responseDoc["candidates"][0]["content"]["parts"][0]["text"];
+        const char* aiAnswer = responseDoc["candidates"][0]["content"]["parts"][0]["text"];
 
-        Serial.println("\n[AI Output]: " + aiAnswer);
-        
-        // Send AI answer to ESP32 #2 for Voice Playback
-        Serial2.println("TTS_TEXT:" + aiAnswer);
+        if (aiAnswer) {
+          Serial.print("\n[AI Output]: ");
+          Serial.println(aiAnswer);
+          
+          // Send AI answer to ESP32 #2 for Voice Playback via UART
+          Serial2.print("TTS_TEXT:");
+          Serial2.println(aiAnswer);
+        }
       } else {
         Serial.println("\n[Error]: JSON Parsing Failed!");
       }
