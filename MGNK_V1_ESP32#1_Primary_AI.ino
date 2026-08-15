@@ -7,7 +7,7 @@
     - ESP32 #2: Audio & TTS Engine
     - Arduino: Sensors & Hardware Control
 */
-
+ 
 #include <WiFi.h>
 #include <HTTPClient.h>
 #include <ArduinoJson.h>
