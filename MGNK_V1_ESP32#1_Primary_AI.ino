@@ -1,13 +1,12 @@
 /*
   Project: MGNK Robot V1 - ESP32 #1 (Main AI Brain)
   Developer: Karthikeyan Chairman
-  Target Launch: September 25, 2026
   Architecture: 
     - ESP32 #1: Gemini AI + Wi-Fi Brain
     - ESP32 #2: Audio & TTS Engine
     - Arduino: Sensors & Hardware Control
 */
- 
+
 #include <WiFi.h>
 #include <HTTPClient.h>
 #include <ArduinoJson.h>
@@ -17,7 +16,7 @@ const char* ssid = "YOUR_WIFI_NAME";
 const char* password = "YOUR_WIFI_PASSWORD";
 
 // Google Gemini API Key
-const char* gemini_api_key = "AIzaSyD-xxxxxx_உங்களிடம்_உள்ள_முழு_API_Key";
+const char* gemini_api_key = "YOUR_GEMINI_API_KEY_HERE";
 
 // Hardware Serial 2 Pins (Communicating with ESP32 #2 - Audio Engine)
 #define TXD2 17
@@ -35,14 +34,14 @@ void sendToGemini(String userQuery) {
     http.begin(url);
     http.addHeader("Content-Type", "application/json");
 
-    // Dynamic JSON Construction (Compatible with ArduinoJson v6 & v7)
+    // Dynamic JSON Construction
     JsonDocument doc;
     JsonArray contents = doc["contents"].to<JsonArray>();
     JsonObject contentObj = contents.add<JsonObject>();
     JsonArray parts = contentObj["parts"].to<JsonArray>();
     JsonObject partObj = parts.add<JsonObject>();
     
-    // Voice-optimized short response in Tamil/English
+    // Voice-optimized short response
     partObj["text"] = "Answer in 1 or 2 short sentences for voice output: " + userQuery;
 
     String requestBody;
