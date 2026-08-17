@@ -18,11 +18,9 @@ const char* password = "YOUR_WIFI_PASSWORD";
 // Google Gemini API Key
 const char* gemini_api_key = "YOUR_GEMINI_API_KEY_HERE";
 
-// Hardware Serial 2 Pins (Communicating with ESP32 #2 - Audio Engine)
+// Hardware Serial Pins
 #define TXD2 17
 #define RXD2 16
-
-// Hardware Serial 1 Pins (Communicating with Arduino - Sensors)
 #define TXD1 10
 #define RXD1 9
 
@@ -33,6 +31,7 @@ void sendToGemini(String userQuery) {
     
     http.begin(url);
     http.addHeader("Content-Type", "application/json");
+    http.setTimeout(10000); // 10-second connection timeout
 
     // Dynamic JSON Construction
     JsonDocument doc;
@@ -41,8 +40,8 @@ void sendToGemini(String userQuery) {
     JsonArray parts = contentObj["parts"].to<JsonArray>();
     JsonObject partObj = parts.add<JsonObject>();
     
-    // Voice-optimized short response
-    partObj["text"] = "Answer in 1 or 2 short sentences for voice output: " + userQuery;
+    // Voice-optimized short response instruction
+    partObj["text"] = "Answer in 1 short sentence for voice playback: " + userQuery;
 
     String requestBody;
     serializeJson(doc, requestBody);
@@ -51,7 +50,6 @@ void sendToGemini(String userQuery) {
 
     if (httpResponseCode > 0) {
       String response = http.getString();
-      
       JsonDocument responseDoc;
       DeserializationError error = deserializeJson(responseDoc, response);
 
@@ -62,7 +60,7 @@ void sendToGemini(String userQuery) {
           Serial.print("\n[AI Output]: ");
           Serial.println(aiAnswer);
           
-          // Send AI answer to ESP32 #2 for Voice Playback via UART
+          // Send AI output to ESP32 #2 via UART
           Serial2.print("TTS_TEXT:");
           Serial2.println(aiAnswer);
         }
@@ -75,26 +73,24 @@ void sendToGemini(String userQuery) {
     }
     http.end();
   } else {
-    Serial.println("\n[Wi-Fi Error]: Disconnected! Reconnecting...");
+    Serial.println("\n[Wi-Fi Error]: Reconnecting...");
     WiFi.begin(ssid, password);
   }
 }
 
 void setup() {
-  // Serial Monitor for Debugging
   Serial.begin(115200);
   
-  // UART Connection to ESP32 #2 (Audio Output)
+  // Serial2 for Audio ESP32
   Serial2.begin(115200, SERIAL_8N1, RXD2, TXD2);
 
-  // UART Connection to Arduino (Sensor Data)
+  // Serial1 for Arduino Sensors
   Serial1.begin(9600, SERIAL_8N1, RXD1, TXD1);
 
   Serial.println("\n==================================================");
-  Serial.println("  MGNK V1 - ESP32 #1 Primary AI Brain Initialized ");
+  Serial.println("  MGNK V1 - Primary AI Brain (Updated Version)   ");
   Serial.println("==================================================");
 
-  // Connecting to Wi-Fi
   WiFi.begin(ssid, password);
   Serial.print("Connecting to Wi-Fi");
   while (WiFi.status() != WL_CONNECTED) {
@@ -102,23 +98,27 @@ void setup() {
     Serial.print(".");
   }
   
-  Serial.println("\nStatus: Wi-Fi Connected Successfully!");
+  Serial.println("\nStatus: Wi-Fi Connected!");
   Serial.print("IP Address: ");
   Serial.println(WiFi.localIP());
   Serial.println("==================================================");
 }
 
 void loop() {
-  // Check if Arduino sent sensor alert/trigger
+  // Check for Sensor Triggers from Arduino
   if (Serial1.available() > 0) {
     String sensorData = Serial1.readStringUntil('\n');
-    Serial.println("[Arduino Sensor Event]: " + sensorData);
+    sensorData.trim();
+    
+    Serial.println("[Arduino Event Received]: " + sensorData);
+
+    // Dynamic AI Prompting based on Sensor Events
+    if (sensorData.indexOf("Human Motion Detected") >= 0) {
+      sendToGemini("A person just walked in front of you. Greet them politely as MGNK Robot.");
+    } else if (sensorData.indexOf("Object Near Robot") >= 0) {
+      sendToGemini("An obstacle is detected close to you. Say a quick alert message.");
+    }
   }
 
-  // Periodic AI System Test Run
-  Serial.println("\n[System]: Requesting Gemini AI Response...");
-  sendToGemini("Hello Gemini, introduce MGNK Robot V1 in 1 short line.");
-
-  // Delay for testing stability
-  delay(20000); 
+  delay(100); // Polling delay
 }
