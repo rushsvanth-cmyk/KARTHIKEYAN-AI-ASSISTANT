@@ -1,5 +1,6 @@
 /*
-  Project: MGNK Robot V1 - ESP32 #1 (Main AI Brain)
+  Project: MGNK Robot V1 - Primary AI Brain
+  File Title: MGNK_V1_ESP32_Primary_AI_Brain.ino
   Developer: Karthikeyan Chairman
   Architecture: 
     - ESP32 #1: Gemini AI + Wi-Fi Brain
