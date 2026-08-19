@@ -103,6 +103,10 @@ void setup() {
   Serial.print("IP Address: ");
   Serial.println(WiFi.localIP());
   Serial.println("==================================================");
+
+  // NEW UPDATE: Auto Boot-up AI Greeting
+  Serial.println("\n[System]: Triggering Boot-up AI Greeting...");
+  sendToGemini("System boot complete. Say 'MGNK System Initialized and Ready' in a cool robotic way.");
 }
 
 void loop() {
