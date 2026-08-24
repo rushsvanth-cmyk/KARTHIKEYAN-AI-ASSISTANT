@@ -8,7 +8,7 @@
     - Arduino: Sensors & Hardware Control
 */
 
-#include <WiFi.h> 
+#include <WiFi.h>  
 #include <HTTPClient.h>
 #include <ArduinoJson.h>
 
