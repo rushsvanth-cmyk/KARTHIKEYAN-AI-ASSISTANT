@@ -1,14 +1,14 @@
 /*
-  Project: MGNK Robot V1 - Primary AI Brain (Version 1.3 Final Release)
+  Project: MGNK Robot V1 - Primary AI Brain (Version 1.4 Master Release)
   File Title: MGNK_V1_ESP32_Primary_AI_Brain.ino
   Developer: Karthikeyan Chairman
   Architecture: 
-    - ESP32 #1: Gemini AI + Wi-Fi Brain (Master) - PHASE 1 COMPLETE
+    - ESP32 #1: Gemini AI + Wi-Fi Brain (Master) - PHASE 1 100% COMPLETE
     - ESP32 #2: Audio & TTS Engine (Slave)
-    - Arduino: Sensors & Hardware Control
+    - Arduino: Hardware Sensors
 */
 
-#include <WiFi.h>  
+#include <WiFi.h> 
 #include <HTTPClient.h>
 #include <ArduinoJson.h>
 
@@ -34,14 +34,12 @@ void sendToGemini(String userQuery) {
     http.addHeader("Content-Type", "application/json");
     http.setTimeout(10000); 
 
-    // Dynamic JSON Construction with Persona Setup
     JsonDocument doc;
     JsonArray contents = doc["contents"].to<JsonArray>();
     JsonObject contentObj = contents.add<JsonObject>();
     JsonArray parts = contentObj["parts"].to<JsonArray>();
     JsonObject partObj = parts.add<JsonObject>();
     
-    // Updated System Prompting: Friendly Assistant Persona
     String promptInstruction = "You are MGNK Robot V1, created by Karthikeyan Chairman. Respond in 1 short, enthusiastic sentence for voice playback: " + userQuery;
     partObj["text"] = promptInstruction;
 
@@ -80,6 +78,25 @@ void sendToGemini(String userQuery) {
   }
 }
 
+// Smart Local Filter for SD Card Audio Triggers
+void processQuery(String query) {
+  query.toLowerCase();
+  
+  // Priority Check: Personal Info directly routed to SD Card Audio Engine
+  if (query.indexOf("who created you") >= 0 || query.indexOf("who is your creator") >= 0) {
+    Serial.println("[Local Route]: Creator Info Request -> Triggering SD Card");
+    Serial2.println("LOCAL_SD_PLAY:creator_info.mp3");
+  } 
+  else if (query.indexOf("father name") >= 0 || query.indexOf("creator father") >= 0) {
+    Serial.println("[Local Route]: Creator Father Info Request -> Triggering SD Card");
+    Serial2.println("LOCAL_SD_PLAY:father_info.mp3");
+  } 
+  else {
+    // General Questions -> Routed to Cloud Gemini AI
+    sendToGemini(query);
+  }
+}
+
 void setup() {
   Serial.begin(115200);
   
@@ -90,9 +107,9 @@ void setup() {
   Serial1.begin(9600, SERIAL_8N1, RXD1, TXD1);
 
   Serial.println("\n==================================================");
-  Serial.println("  MGNK V1 - Primary AI Brain (v1.3 Final Release)");
+  Serial.println("  MGNK V1 - Primary AI Brain (v1.4 Master Release)");
   Serial.println("  Developer: Karthikeyan Chairman");
-  Serial.println("  Phase 1 (ESP32 #1): 100% COMPLETE & READY");
+  Serial.println("  Phase 1 (ESP32 #1 Master Firmware): 100% SUCCESS!");
   Serial.println("==================================================");
 
   WiFi.begin(ssid, password);
@@ -107,12 +124,12 @@ void setup() {
   Serial.println(WiFi.localIP());
   Serial.println("==================================================");
 
-  // Boot-up AI Greeting
+  // Boot-up Greeting
   sendToGemini("System startup complete. Greet Karthikeyan Chairman politely.");
 }
 
 void loop() {
-  // 1. Process Hardware Sensor Inputs from Arduino
+  // 1. Hardware Sensor Inputs
   if (Serial1.available() > 0) {
     String sensorData = Serial1.readStringUntil('\n');
     sensorData.trim();
@@ -120,19 +137,19 @@ void loop() {
     Serial.println("[Arduino Event Received]: " + sensorData);
 
     if (sensorData.indexOf("Human Motion Detected") >= 0) {
-      sendToGemini("A person just walked in front of you. Welcome them warmly.");
+      processQuery("A person just walked in front of you. Welcome them warmly.");
     } else if (sensorData.indexOf("Object Near Robot") >= 0) {
-      sendToGemini("An obstacle is detected very close. Say a quick caution message.");
+      processQuery("An obstacle is detected very close. Say a quick caution message.");
     }
   }
 
-  // 2. Process Manual/Voice Command Input via Serial Monitor
+  // 2. Direct Voice/Serial Queries
   if (Serial.available() > 0) {
     String manualQuery = Serial.readStringUntil('\n');
     manualQuery.trim();
     if (manualQuery.length() > 0) {
       Serial.println("[Direct Query Received]: " + manualQuery);
-      sendToGemini(manualQuery);
+      processQuery(manualQuery);
     }
   }
 
