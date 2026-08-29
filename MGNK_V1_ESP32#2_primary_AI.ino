@@ -1,7 +1,7 @@
 /*
  * Project: MGNK Robot V1 - Phase 2 (Audio Engine)
- * Date: August 28, 2026
- * Task: Audio.h Integration, MAX98357A Setup, Inter-board UART & Google TTS Stream Handler
+ * Date: August 29, 2026
+ * Task: Audio.h, MAX98357A, Inter-board UART, Google TTS Stream Handler & Dynamic Volume Control
  * Developer: Karthikeyan Chairman
  */
 
@@ -23,7 +23,7 @@
 Audio audio;
 
 // ============================================================================
-// AUG 27 & AUG 28 TASK FUNCTIONS: UART Communication & TTS Stream Handler
+// AUG 27, 28 & 29 TASK FUNCTIONS: UART, TTS Stream & Volume Control
 // ============================================================================
 
 void initUARTReceiver() {
@@ -32,7 +32,7 @@ void initUARTReceiver() {
   Serial.println("[Aug 27 Log] UART Serial Bridge Initialized on Pins 16/17!");
 }
 
-// Aug 28 Addition: Dynamic TTS Audio Stream Processing
+// Aug 28 & 29 Addition: Audio Playback & Dynamic Volume Controller
 void processAudioPlayback(String command) {
   if (command == "STOP" || command == "HALT") {
     audio.stopSong(); // Instantly stops audio playback
@@ -45,6 +45,14 @@ void processAudioPlayback(String command) {
     Serial.println(filePath);
     audio.connecttoFS(SD, filePath.c_str());
   }
+  // Aug 29 Addition: Dynamic Volume Adjustment via UART
+  else if (command.startsWith("SET_VOL:")) {
+    int volLevel = command.substring(8).toInt();
+    volLevel = constrain(volLevel, 0, 21); // Keep volume within safe Audio.h limits
+    audio.setVolume(volLevel);
+    Serial.print("[Aug 29 Action] Speaker Volume Adjusted To: ");
+    Serial.println(volLevel);
+  }
 }
 
 void handleIncomingCommands() {
@@ -56,7 +64,7 @@ void handleIncomingCommands() {
     Serial.print("[Log] Received Command: ");
     Serial.println(command);
 
-    // Process incoming audio playback and interrupt commands
+    // Process incoming audio playback, volume adjustment and interrupt commands
     processAudioPlayback(command);
   }
 }
@@ -77,18 +85,19 @@ void setup() {
 
   // MAX98357A I2S Audio Pinout Setup
   audio.setPinout(I2S_BCLK, I2S_LRC, I2S_DOUT);
-  audio.setVolume(15); 
+  audio.setVolume(18); // Tuned default high-clarity volume level
   Serial.println("[Aug 26 Task Complete] Audio.h & MAX98357A Amp Ready!");
 
-  // Aug 27 Setup Call
+  // Aug 27 & Aug 29 Setup Calls
   initUARTReceiver();
   Serial.println("[Aug 27 Task Complete] Inter-board UART System Online!");
   Serial.println("[Aug 28 Task Complete] Audio Stream Receiver System Ready!");
+  Serial.println("[Aug 29 Task Complete] Phase 2 Audio Engine Firmware Ready!");
 }
 
 void loop() {
   audio.loop();               // Keeps audio engine running continuously
-  handleIncomingCommands();   // Listens for instant interrupt & TTS signals
+  handleIncomingCommands();   // Listens for instant interrupt, TTS & Volume signals
 }
 
 // ============================================================================
