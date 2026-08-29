@@ -1,7 +1,7 @@
 /*
  * Project: MGNK Robot V1 - Phase 2 (Audio Engine)
- * Date: August 27, 2026
- * Task: Audio.h Integration, MAX98357A Setup & UART Inter-board Command Receiver
+ * Date: August 28, 2026
+ * Task: Audio.h Integration, MAX98357A Setup, Inter-board UART & Google TTS Stream Handler
  * Developer: Karthikeyan Chairman
  */
 
@@ -23,7 +23,7 @@
 Audio audio;
 
 // ============================================================================
-// AUG 27 TASK FUNCTIONS: UART Communication & Interrupt System
+// AUG 27 & AUG 28 TASK FUNCTIONS: UART Communication & TTS Stream Handler
 // ============================================================================
 
 void initUARTReceiver() {
@@ -32,20 +32,32 @@ void initUARTReceiver() {
   Serial.println("[Aug 27 Log] UART Serial Bridge Initialized on Pins 16/17!");
 }
 
+// Aug 28 Addition: Dynamic TTS Audio Stream Processing
+void processAudioPlayback(String command) {
+  if (command == "STOP" || command == "HALT") {
+    audio.stopSong(); // Instantly stops audio playback
+    Serial.println("[Aug 27 Action] Speech Interrupted and Stopped Successfully!");
+  } 
+  else if (command.startsWith("TTS_PLAY:")) {
+    // Extracts speech file path sent by Primary AI Brain
+    String filePath = command.substring(9);
+    Serial.print("[Aug 28 Action] Streaming TTS Audio File: ");
+    Serial.println(filePath);
+    audio.connecttoFS(SD, filePath.c_str());
+  }
+}
+
 void handleIncomingCommands() {
   // Check for incoming commands from Primary AI Brain
   if (Serial2.available()) {
     String command = Serial2.readStringUntil('\n');
     command.trim();
 
-    Serial.print("[Aug 27 Log] Received Command: ");
+    Serial.print("[Log] Received Command: ");
     Serial.println(command);
 
-    // Immediate Speech Interrupt Logic
-    if (command == "STOP" || command == "HALT") {
-      audio.stopSong(); // Instantly stops audio playback
-      Serial.println("[ACTION] Speech Interrupted and Stopped Successfully!");
-    }
+    // Process incoming audio playback and interrupt commands
+    processAudioPlayback(command);
   }
 }
 
@@ -55,7 +67,7 @@ void handleIncomingCommands() {
 
 void setup() {
   Serial.begin(115200);
-  
+
   // Initialize SD Card
   if (!SD.begin(SD_CS)) {
     Serial.println("[Aug 26 Log] SD Card Mount Failed!");
@@ -71,13 +83,12 @@ void setup() {
   // Aug 27 Setup Call
   initUARTReceiver();
   Serial.println("[Aug 27 Task Complete] Inter-board UART System Online!");
+  Serial.println("[Aug 28 Task Complete] Audio Stream Receiver System Ready!");
 }
 
 void loop() {
   audio.loop();               // Keeps audio engine running continuously
-  handleIncomingCommands();   // Listens for instant interrupt & trigger signals
+  handleIncomingCommands();   // Listens for instant interrupt & TTS signals
 }
 
-// ============================================================================
-// AUG 28 TASK CODE WILL BE APPENDED BELOW THIS LINE TOMORROW
 // ============================================================================
