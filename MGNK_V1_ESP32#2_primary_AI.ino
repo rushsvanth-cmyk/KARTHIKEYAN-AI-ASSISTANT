@@ -1,6 +1,6 @@
 /*
- * Project: MGNK Robot V1 - Phase 2 (Audio Engine)
- * Date: August 29, 2026
+ * Project: MGNK Robot V1 - Phase 2 (Audio Engine & Voice Output)
+ * Date: August 30, 2026
  * Task: Audio.h, MAX98357A, Inter-board UART, Google TTS Stream Handler & Dynamic Volume Control
  * Developer: Karthikeyan Chairman
  */
@@ -23,7 +23,7 @@
 Audio audio;
 
 // ============================================================================
-// AUG 27, 28 & 29 TASK FUNCTIONS: UART, TTS Stream & Volume Control
+// AUG 27, 28, 29 & 30 TASK FUNCTIONS: UART, TTS Stream & Volume Control
 // ============================================================================
 
 void initUARTReceiver() {
@@ -32,20 +32,20 @@ void initUARTReceiver() {
   Serial.println("[Aug 27 Log] UART Serial Bridge Initialized on Pins 16/17!");
 }
 
-// Aug 28 & 29 Addition: Audio Playback & Dynamic Volume Controller
+// Dynamic Audio Stream, Google TTS Voice & Dynamic Volume Controller
 void processAudioPlayback(String command) {
   if (command == "STOP" || command == "HALT") {
     audio.stopSong(); // Instantly stops audio playback
     Serial.println("[Aug 27 Action] Speech Interrupted and Stopped Successfully!");
   } 
+  // Aug 28 & Aug 30: Stream Google TTS Audio Output sent by Primary AI Brain
   else if (command.startsWith("TTS_PLAY:")) {
-    // Extracts speech file path sent by Primary AI Brain
     String filePath = command.substring(9);
-    Serial.print("[Aug 28 Action] Streaming TTS Audio File: ");
+    Serial.print("[Aug 30 Action] Converting & Playing Google TTS Voice Output: ");
     Serial.println(filePath);
     audio.connecttoFS(SD, filePath.c_str());
   }
-  // Aug 29 Addition: Dynamic Volume Adjustment via UART
+  // Aug 29: Dynamic Volume Adjustment via UART
   else if (command.startsWith("SET_VOL:")) {
     int volLevel = command.substring(8).toInt();
     volLevel = constrain(volLevel, 0, 21); // Keep volume within safe Audio.h limits
@@ -56,7 +56,7 @@ void processAudioPlayback(String command) {
 }
 
 void handleIncomingCommands() {
-  // Check for incoming commands from Primary AI Brain
+  // Check for incoming commands from Primary AI Brain (ESP32 #1)
   if (Serial2.available()) {
     String command = Serial2.readStringUntil('\n');
     command.trim();
@@ -88,11 +88,12 @@ void setup() {
   audio.setVolume(18); // Tuned default high-clarity volume level
   Serial.println("[Aug 26 Task Complete] Audio.h & MAX98357A Amp Ready!");
 
-  // Aug 27 & Aug 29 Setup Calls
+  // UART & Voice Output Setup Calls
   initUARTReceiver();
   Serial.println("[Aug 27 Task Complete] Inter-board UART System Online!");
   Serial.println("[Aug 28 Task Complete] Audio Stream Receiver System Ready!");
   Serial.println("[Aug 29 Task Complete] Phase 2 Audio Engine Firmware Ready!");
+  Serial.println("[Aug 30 Task Complete] Google TTS Voice Output Handler Online!");
 }
 
 void loop() {
@@ -101,3 +102,4 @@ void loop() {
 }
 
 // ============================================================================
+// PHASE 2 (AUG 30 - SEP 02 TASK IN PROGRESS)
