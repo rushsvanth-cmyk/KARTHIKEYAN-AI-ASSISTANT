@@ -1,7 +1,7 @@
 /*
  * Project: MGNK Robot V1 - Phase 2 (Audio Engine & Core Logic)
- * Date: September 01, 2026
- * Task: Pure Logic Code for Audio.h, Google TTS Stream Handler & Telemetry Callback
+ * Date: September 02, 2026
+ * Task: Pure Logic Code for Audio.h, Google TTS Handler, Status Telemetry & Phase 2 Completion
  * Developer: Karthikeyan Chairman
  */
 
@@ -13,7 +13,7 @@
 Audio audio;
 
 // ============================================================================
-// CORE LOGIC FUNCTIONS: UART RECEIVER, TTS & TELEMETRY
+// CORE LOGIC FUNCTIONS: UART RECEIVER, TTS, TELEMETRY & HEALTH CHECK
 // ============================================================================
 
 void processAudioPlayback(String command) {
@@ -40,6 +40,10 @@ void processAudioPlayback(String command) {
     audio.setVolume(volLevel);
     Serial2.println("ACK:VOL_SET");
   }
+  // Sep 02 Addition: System Health & Readiness Status Inquiry
+  else if (command == "GET_STATUS") {
+    Serial2.println("STATUS:AUDIO_ENGINE_ONLINE");
+  }
 }
 
 void handleIncomingCommands() {
@@ -53,6 +57,11 @@ void handleIncomingCommands() {
 // Audio Status Callback (Triggers automatically when speech finishes playing)
 void audio_eof_speech(const char *info) {
   Serial2.println("STATUS:SPEECH_FINISHED");
+}
+
+// Audio Engine Error Callback (Triggers on playback or stream failures)
+void audio_error(const char *info) {
+  Serial2.println("ERR:AUDIO_PLAYBACK_ERROR");
 }
 
 // ============================================================================
@@ -70,7 +79,7 @@ void setup() {
 
 void loop() {
   audio.loop();               // Keeps audio engine running continuously
-  handleIncomingCommands();   // Listens for instant interrupt, TTS & Volume signals
+  handleIncomingCommands();   // Listens for instant interrupt, TTS, Volume & Status signals
 }
 
 // ============================================================================
