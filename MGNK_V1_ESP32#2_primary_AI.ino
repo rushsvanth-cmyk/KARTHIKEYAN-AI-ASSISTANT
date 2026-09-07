@@ -1,7 +1,7 @@
 /*
  * Project: MGNK Robot V1 - Phase 3 (Audio Engine & Sensor/Motion Logic)
- * Date: September 05, 2026
- * Task: Audio.h, Google TTS, System Health, Recovery & Multi-Axis Motion Telemetry
+ * Date: September 06, 2026
+ * Task: Audio.h, Google TTS, System Health, Recovery & IMU Heartbeat Telemetry
  * Developer: Karthikeyan Chairman
  */
 
@@ -18,9 +18,10 @@ Audio audio;
 bool isMuted = false;
 int previousVolume = 18;
 int16_t accelX, accelY, accelZ;
+unsigned long lastSensorCheck = 0;
 
 // ============================================================================
-// PHASE 3 SENSOR FUNCTIONS: MULTI-AXIS MOTION & SAFETY TELEMETRY
+// PHASE 3 SENSOR FUNCTIONS: MULTI-AXIS MOTION & HEARTBEAT TELEMETRY
 // ============================================================================
 
 void initIMUSensor() {
@@ -32,6 +33,10 @@ void initIMUSensor() {
 }
 
 void checkTiltAndSafetyStatus() {
+  // Sep 06 Addition: Non-blocking 100ms Polling Rate for System Stability
+  if (millis() - lastSensorCheck < 100) return;
+  lastSensorCheck = millis();
+
   Wire.beginTransmission(MPU6050_ADDR);
   Wire.write(0x3B); // Accelerometer Data Register
   Wire.endTransmission(false);
@@ -41,12 +46,12 @@ void checkTiltAndSafetyStatus() {
   accelY = Wire.read() << 8 | Wire.read();
   accelZ = Wire.read() << 8 | Wire.read();
 
-  // Sep 05 Addition: Multi-Axis Directional Motion Analysis
-  if (accelX > 15000) {
-    Serial2.println("STATUS:TILT_FORWARD_ALERT");
+  // Directional Motion Analysis & Fall Filter
+  if (accelX > 20000) {
+    Serial2.println("STATUS:CRITICAL_FALL_FORWARD");
   } 
-  else if (accelX < -15000) {
-    Serial2.println("STATUS:TILT_BACKWARD_ALERT");
+  else if (accelX < -20000) {
+    Serial2.println("STATUS:CRITICAL_FALL_BACKWARD");
   } 
   else if (accelY > 15000) {
     Serial2.println("STATUS:TILT_RIGHT_ALERT");
@@ -145,7 +150,7 @@ void setup() {
 void loop() {
   audio.loop();               // Keeps audio engine running continuously
   handleIncomingCommands();   // Handles Interrupt, TTS, Volume, Mute & Reset signals
-  checkTiltAndSafetyStatus(); // Monitors MPU6050 IMU tilt status
+  checkTiltAndSafetyStatus(); // Non-blocking MPU6050 IMU tilt & fall polling
 }
 
 // ============================================================================
