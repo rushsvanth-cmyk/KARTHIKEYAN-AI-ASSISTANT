@@ -1,7 +1,7 @@
-/* 
+/*
  * Project: MGNK Robot V1 - Phase 3 (Audio Engine & Sensor/Motion Logic)
- * Date: September 04, 2026
- * Task: Audio.h, Google TTS, System Health, Recovery & MPU6050 Tilt Safety Telemetry
+ * Date: September 05, 2026
+ * Task: Audio.h, Google TTS, System Health, Recovery & Multi-Axis Motion Telemetry
  * Developer: Karthikeyan Chairman
  */
 
@@ -20,7 +20,7 @@ int previousVolume = 18;
 int16_t accelX, accelY, accelZ;
 
 // ============================================================================
-// PHASE 3 SENSOR FUNCTIONS: MPU6050 IMU TILT & SAFETY TELEMETRY
+// PHASE 3 SENSOR FUNCTIONS: MULTI-AXIS MOTION & SAFETY TELEMETRY
 // ============================================================================
 
 void initIMUSensor() {
@@ -41,9 +41,18 @@ void checkTiltAndSafetyStatus() {
   accelY = Wire.read() << 8 | Wire.read();
   accelZ = Wire.read() << 8 | Wire.read();
 
-  // Tilt/Fall Alert Detection Logic
-  if (abs(accelX) > 15000 || abs(accelY) > 15000) {
-    Serial2.println("STATUS:TILT_WARNING_TRIGGERED");
+  // Sep 05 Addition: Multi-Axis Directional Motion Analysis
+  if (accelX > 15000) {
+    Serial2.println("STATUS:TILT_FORWARD_ALERT");
+  } 
+  else if (accelX < -15000) {
+    Serial2.println("STATUS:TILT_BACKWARD_ALERT");
+  } 
+  else if (accelY > 15000) {
+    Serial2.println("STATUS:TILT_RIGHT_ALERT");
+  } 
+  else if (accelY < -15000) {
+    Serial2.println("STATUS:TILT_LEFT_ALERT");
   }
 }
 
@@ -128,7 +137,7 @@ void setup() {
   SD.begin(5); // SD CS Pin
   audio.setVolume(18);
   Serial2.begin(9600, SERIAL_8N1, 16, 17); // UART Bridge Pins
-  
+
   // Phase 3 Sensor Initialization
   initIMUSensor();
 }
